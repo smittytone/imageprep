@@ -8,7 +8,6 @@ import Foundation
 import Cocoa
 
 
-
 // MARK: - Global Variables
 
 // File management values
@@ -19,6 +18,7 @@ var sourceIsdirectory: ObjCBool = false
 var destPath: String = ""
 var destFile: String = ""
 var destIsdirectory: ObjCBool = false
+var doOverwrite: Bool = false
 
 // Image attributes and action flags
 var padColour: String = "FFFFFF"
@@ -28,7 +28,7 @@ var padHeight: Int = 2192
 var padWidth: Int = 1668
 var scaleHeight = padHeight
 var scaleWidth = padWidth
-var dpi: Int = 300
+var dpi: Float = 150.0
 var newFormat: String = ""
 var formatExtension: String = "png"
 var doCrop: Bool = false
@@ -46,6 +46,7 @@ var argCount: Int = 0
 var actionType: String = "c"
 var prevArg: String = ""
 var fileCount: Int = 0
+
 
 
 func getFullPath(_ relativePath: String) -> String {
@@ -84,11 +85,6 @@ func getFileSize(_ path: String) -> Int {
 
     let workPath = "\(sourcePath)/\(path)"
     let data: Data = fm.contents(atPath: workPath) ?? Data.init(count: 0)
-
-    #if DEBUG
-    print("\(workPath) size: \(data.count)")
-    #endif
-
     return data.count
 }
 
@@ -114,14 +110,12 @@ func processFile(_ file: String) {
         }
 
         #if DEBUG
-        print("Output file: \(outFile)")
+        print("CURRENT TARGET FILE: \(outFile)")
         #endif
 
         // Only proceed if the file is non-zero
         if getFileSize(file) == 0 {
-            if doShowMessages {
-                print("File \(file) has no content -- skipping")
-            }
+            readout("File \(file) has no content -- skipping")
             return
         }
 
@@ -129,19 +123,36 @@ func processFile(_ file: String) {
 
         // Copy the file before editing...
         if source != outFile {
+            // Does the file already exist at its destination?
+            if fm.fileExists(atPath: outFile) {
+                // Yes...
+                if !doOverwrite {
+                    // ...but bail because we're not overwriting
+                    readout("Error -- target file \(outFile) already exists -- skipping")
+                    return
+                }
+
+                // ... so delete the to-be-overwritten file
+                let success = removeFile(outFile)
+                if !success {
+                    readout("Error -- Could not overwrite \(outFile) -- skipping")
+                    return
+                }
+            }
+
+            // There's nothing in the way of the copy (target non-existent or now deleted)
+            // so gp ahead and make it so
             do {
-                try fm.copyItem(at: URL.init(fileURLWithPath: source),
+               try fm.copyItem(at: URL.init(fileURLWithPath: source),
                                 to: URL.init(fileURLWithPath: outFile))
             } catch {
-                print("Could not write \(outFile) -- skipping")
+                readout("Error -- Could not write \(outFile) -- skipping")
                 return
             }
         }
 
         // Report process
-        if doShowMessages {
-            print("Processing \(file) as \(outFile)...")
-        }
+        readout("Processing \(file) as \(outFile)...")
 
         // We haven't (yet) altered the image's resolution
         didChangeResolution = false
@@ -152,25 +163,32 @@ func processFile(_ file: String) {
             // BEFORE converting to the target format and mark as done
             if doChangeResolution {
                 if ext == "png" || ext == "tif" || ext == "tiff" {
-                    _ = runSips([outFile, "-s", "dpiHeight", "\(dpi)", "-s", "dpiWidth", "\(dpi)"])
-                    didChangeResolution = true
+                    runSips([outFile, "-s", "dpiHeight", "\(dpi)", "-s", "dpiWidth", "\(dpi)"])
+                    //didChangeResolution = true
+                    print(":::")
                 }
             }
 
             // Whatever the image type, output the new format as a new file
-            let newOutFile = (outFile as NSString).deletingPathExtension + formatExtension
+            let newOutFile = (outFile as NSString).deletingPathExtension + "." + formatExtension
 
             #if DEBUG
             print("NEW FORMAT FILE: \(newOutFile)")
             #endif
 
-            _ = runSips([outFile, "-s", "format", "\(newFormat)", "--out", newOutFile])
+            if fm.fileExists(atPath: newOutFile) && !doOverwrite {
+                // Uh oh! There's already a file there
+                readout("Error -- target file \(newOutFile) already exists -- skipping")
+                return
+            }
+
+            runSips([outFile, "-s", "format", "\(newFormat)", "--out", newOutFile])
 
             // If we need to, delete the old source file
-            if doDeleteSource && source != outFile {
+            if source != outFile {
                 let success = removeFile(outFile)
-                if !success && doShowMessages {
-                    print("Error -- Could not delete \(outFile) after processing")
+                if !success {
+                    readout("Error -- Could not delete \(outFile) after processing")
                 }
             }
 
@@ -178,38 +196,38 @@ func processFile(_ file: String) {
             outFile = newOutFile
         }
 
-        // Pad the file, as requested
-        if doPad {
-            _ = runSips([outFile, "-p", "\(padHeight)", "\(padWidth)", "--padColor", "\(padColour)"])
-        }
-
         // Crop the file, as requested
         if doCrop {
-            _ = runSips([outFile, "-c", "\(cropWidth)", "\(cropHeight)", "--padColor", "\(padColour)"])
+            runSips([outFile, "-c", "\(cropHeight)", "\(cropWidth)", "--padColor", "\(padColour)"])
+        }
+
+        // Pad the file, as requested
+        if doPad {
+            runSips([outFile, "-p", "\(padHeight)", "\(padWidth)", "--padColor", "\(padColour)"])
         }
 
         // Scale the file, as requested
         if doScale {
-            _ = runSips([outFile, "-z", "\(scaleHeight)", "\(scaleWidth)", "--padColor", "\(padColour)"])
+            runSips([outFile, "-z", "\(scaleHeight)", "\(scaleWidth)", "--padColor", "\(padColour)"])
         }
 
         // Set the DPI if we need to and have not done so yet (see above)
         if doChangeResolution && !didChangeResolution {
-            if ext == "jpg" || ext == "jpeg" {
+            if ext == "ejpg" || ext == "ejpeg" {
                 // sips does not apply dpi settings to JPEGs (why???) so if the target image is a JPEG,
                 // convert it to PNG, apply the dpi settings and then convert it back again.
-                let tmpFile = outFile + "-sipstmp"
-                _ = runSips([outFile, "-s", "format", "png", "--out", tmpFile])
-                _ = runSips([tmpFile, "-s", "dpiHeight", "\(dpi)", "-s", "dpiWidth", "\(dpi)"])
-                _ = runSips([tmpFile, "-s", "format", "jpeg", "--out", outFile])
+                let tmpFile = outFile + ".sipstmp"
+                runSips([outFile, "-s", "format", "png", "--out", tmpFile])
+                runSips([tmpFile, "-s", "dpiHeight", "\(dpi)", "-s", "dpiWidth", "\(dpi)"])
+                runSips([tmpFile, "-s", "format", "jpeg", "--out", outFile])
 
                 let success = removeFile(tmpFile)
-                if !success && doShowMessages {
-                    print("Error -- Could not delete temporary file \(tmpFile) after processing")
+                if !success {
+                    readout("Error -- Could not delete temporary file \(tmpFile) after processing")
                 }
             } else {
                 // For all other image types, just do the DPI change
-                _ = runSips([outFile, "-s", "dpiHeight", "\(dpi)", "-s", "dpiWidth", "\(dpi)"])
+                runSips([outFile, "-s", "dpiHeight", "\(dpi)", "-s", "dpiWidth", "\(dpi)"])
             }
         }
 
@@ -219,8 +237,8 @@ func processFile(_ file: String) {
         // Remove the source file if requested
         if doDeleteSource {
             let success = removeFile(source)
-            if !success && doShowMessages {
-                print("Error -- HelloCould not delete \(source) after processing")
+            if !success {
+                readout("Error -- HelloCould not delete \(source) after processing")
             }
         }
     }
@@ -241,7 +259,16 @@ func removeFile(_ path: String) -> Bool {
 }
 
 
-func runSips(_ args: [String]) -> Bool {
+func readout(_ message: String) {
+
+    // Generic 'log message if we need to' routine
+
+    if !doShowMessages { return }
+    print(message)
+}
+
+
+func runSips(_ args: [String]) {
 
     // Call sips using Process
 
@@ -257,8 +284,8 @@ func runSips(_ args: [String]) -> Bool {
     do {
         try task.run()
     } catch {
-        print("[ERROR] Cannot locate sips")
-        return false
+        print("Error -- Cannot locate sips -- exiting")
+        exit(1)
     }
 
     // Block until the task has completed (short tasks ONLY)
@@ -277,14 +304,12 @@ func runSips(_ args: [String]) -> Bool {
             }
 
             if outString.count > 0 {
-                print("[ERROR] sips reported an error: \(outString)")
+                print("Error -- sips reported an error: \(outString)")
             } else {
-                print("[ERROR] sips exited with code \(task.terminationStatus)")
+                print("Error -- sips exited with code \(task.terminationStatus)")
             }
         }
     }
-
-    return true
 }
 
 
@@ -356,7 +381,7 @@ func showHelp() {
     print("                      [-a s scale_height scale_width] ")
     print("                      [-a p pad_height pad_width]")
     print("                      [-a c crop_height crop_width] ")
-    print("                      [-r] [-f] [-k] [-h]\n")
+    print("                      [-r] [-f] [-k] [-o] [-h]\n")
     print("    NOTE You can select either crop, pad or scale or all three, but actions will always")
     print("         be performed in this order: pad, then crop, then scale.\n")
     print("Options:")
@@ -364,8 +389,9 @@ func showHelp() {
     print("    -d / --destination [path]                  The path to the images. Default: source directory.")
     print("    -a / --action      [type] [width] [height] The crop/pad dimensions. Type is s (scale), c (crop) or p (pad).")
     print("    -c / --colour      [colour]                The padding colour in Hex, eg. A1B2C3. Default: FFFFFF.")
-    print("    -r / --resolution  [dpi]                   Set the image dpi, eg. 300")
-    print("    -f / --format      [format]                Set the image format: JPG/JPEG, PNG or TIF/TIFF")
+    print("    -r / --resolution  [dpi]                   Set the image dpi, eg. 300.")
+    print("    -f / --format      [format]                Set the image format: JPG/JPEG, PNG or TIF/TIFF.")
+    print("    -o / --overwrite                           Overwrite an existing file. Without this, existing files will be kept.")
     print("    -k / --keep                                Keep the source file. Without this, the source will be deleted.")
     print("    -q / --quiet                               Silence output messages (errors excepted).")
     print("    -h / --help                                This help screen.")
@@ -404,7 +430,7 @@ for argument in CommandLine.arguments {
     if argValue != 0 {
         // Make sure we're not reading in an option rather than a value
         if argument.prefix(1) == "-" {
-            print("[ERROR] Missing value for \(prevArg)")
+            print("Error -- Missing value for \(prevArg) -- exiting")
             exit(1)
         }
 
@@ -416,12 +442,13 @@ for argument in CommandLine.arguments {
         case 3:
             padColour = processColour(argument)
         case 4:
-            dpi = Int(argument) ?? 300
+            dpi = Float(argument) ?? 150.0
         case 5:
             newFormat = processFormat(argument)
         case 6:
             actionType = argument
         case 7:
+            // Set widths based on action and set the action flag if the value is good
             if actionType == "c" {
                 cropWidth = Int(argument) ?? 0
                 if cropWidth != 0 { doCrop = true }
@@ -433,6 +460,7 @@ for argument in CommandLine.arguments {
                 if padWidth != 0 { doPad = true }
             }
         case 8:
+            // Set heights based on action, but clear the action flag if the value is bad
             if actionType == "c" {
                 cropHeight = Int(argument) ?? 0
                 if cropHeight == 0 { doCrop = false }
@@ -444,7 +472,7 @@ for argument in CommandLine.arguments {
                 if padHeight == 0 { doPad = false }
             }
         default:
-            print("[ERROR] Unknown argument: \(argument)")
+            print("Error -- Unknown value: \(argument) -- exiting")
             exit(1)
         }
 
@@ -454,7 +482,7 @@ for argument in CommandLine.arguments {
             argValue = 0
         }
     } else {
-        switch argument {
+        switch argument.lowercased() {
         case "-s":
             fallthrough
         case "--source":
@@ -473,6 +501,7 @@ for argument in CommandLine.arguments {
             fallthrough
         case "--resolution":
             argValue = 4
+            doChangeResolution = true
         case "-f":
             fallthrough
         case "--format":
@@ -490,6 +519,10 @@ for argument in CommandLine.arguments {
             fallthrough
         case "--keep":
             doDeleteSource = false
+        case "-o":
+            fallthrough
+        case "--overwrite":
+            doOverwrite = true
         case "-h":
             fallthrough
         case "--help":
@@ -499,7 +532,7 @@ for argument in CommandLine.arguments {
             showVersion()
             exit(0)
         default:
-            print("[ERROR] Unknown argument: \(argument)")
+            print("Error -- Unknown argument: \(argument) -- exiting")
             exit(1)
         }
 
@@ -510,12 +543,10 @@ for argument in CommandLine.arguments {
 
     // Trap commands that come last and therefore have missing args
     if argCount == CommandLine.arguments.count && argValue > 0 {
-        print("[ERROR] Missing value for \(argument)")
+        print("Error -- Missing value for \(argument) -- exiting")
         exit(1)
     }
 }
-
-print("CROP width: \(cropWidth), height: \(cropHeight)")
 
 // Get the full source path
 // NOTE At this point they may be single filenames
@@ -524,7 +555,7 @@ sourcePath = getFullPath(sourcePath)
 // Check that the source is a directory or a file
 // If neither exists, we have to bail
 if !fm.fileExists(atPath: sourcePath, isDirectory: &sourceIsdirectory) {
-    print("Source \(sourcePath) cannot be found -- exiting")
+    print("Error -- Source \(sourcePath) cannot be found -- exiting")
     exit(1)
 }
 
@@ -536,8 +567,8 @@ if !sourceIsdirectory.boolValue {
 }
 
 #if DEBUG
-print("S DIR: \(sourcePath)")
-print("S FIL: \(sourceFile)")
+print("SOURCE DIR.: \(sourcePath)")
+print("SOURCE FILE: \(sourceFile)")
 #endif
 
 // Get full destination path
@@ -546,9 +577,8 @@ destPath = getFullPath(destPath)
 
 if !fm.fileExists(atPath: destPath, isDirectory: &destIsdirectory) {
     // Destination is missing -- this is valid if the destination is a file,
-    // so check its extension
-    let ext = (destPath as NSString).pathExtension
-    if ext.count == 0 {
+    // so check its extension before bailing
+    if (destPath as NSString).pathExtension.count == 0 {
         // No file extension, ergo this is a directory
         print("Destination \(destPath) cannot be found -- exiting")
         exit(1)
@@ -563,8 +593,8 @@ if !destIsdirectory.boolValue {
 }
 
 #if DEBUG
-print("D DIR: \(destPath)")
-print("D FIL: \(destFile)")
+print("DEST. DIR.: \(destPath)")
+print("DEST FILE: \(destFile)")
 #endif
 
 // If the source is a directory and the target is a file, that's a mismatch
@@ -583,9 +613,7 @@ if sourcePath == destPath && sourceFile == destFile {
 if doShowMessages {
     print("Source: \(sourcePath)" + (sourceFile.count > 0 ? "/\(sourceFile)" : ""))
     print("Target: \(destPath)" + (destFile.count > 0 ? "/\(destFile)" : ""))
-    if doChangeResolution {
-        print("New DPI: \(dpi)")
-    }
+    if doChangeResolution { print("New DPI: \(dpi)") }
 }
 
 // Split for a single source file or source directory
