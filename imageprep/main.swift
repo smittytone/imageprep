@@ -572,6 +572,12 @@ if !destIsdirectory.boolValue {
     // The source points to a file, so extract the file
     destFile = (destPath as NSString).lastPathComponent
     destPath = (destPath as NSString).deletingLastPathComponent
+
+    // As a final check, test the path to the file -- we don't make
+    // intermediate directories, yet
+    if !fm.fileExists(atPath: destPath) {
+        reportError("Destination directory \(destPath) cannot be found")
+    }
 }
 
 // If the source is a directory and the target is a file, that's a mismatch
