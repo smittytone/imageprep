@@ -14,7 +14,7 @@ imageprep [-s path] [-d path] [-c pad_colour] \
 
 ### Options ###
 
-| Switch | Alt.&nbsp;Switch&nbsp;&nbsp;&nbsp;&nbsp; | Argument(s) | Description |
+| Switch | Alt.&nbsp;Switch&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Argument(s) | Description |
 | :-: | --- | --- | --- |
 | `-s` | `--source` | `{path}` | The path to an image or a directory of images. Default: current working directory |
 | `-d` | `--destination` | `{path}` | The path to the images. Default: source directory |
