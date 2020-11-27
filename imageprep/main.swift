@@ -363,7 +363,7 @@ func showHelp() {
     showHeader()
 
     print("A macOS image preparation utility\n")
-    print("Usage:\n    imageprep [-s path] [-d path] [-c padColour]")
+    print("Usage:\n    imageprep [-s path] [-d path] [-c pad_colour]")
     print("                      [-a s scale_height scale_width] ")
     print("                      [-a p pad_height pad_width]")
     print("                      [-a c crop_height crop_width] ")
