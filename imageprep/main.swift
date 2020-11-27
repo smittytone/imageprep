@@ -8,6 +8,12 @@ import Foundation
 import Cocoa
 
 
+// MARK: - Constants
+
+let SUPPORTED_TYPES = ["png", "jpg", "jpeg", "tif", "tiff"]
+let EMPTY_HEX_BYTES = "000000"
+
+
 // MARK: - Global Variables
 
 // File management values
@@ -29,7 +35,7 @@ var padWidth: Int = 1668
 var scaleHeight = padHeight
 var scaleWidth = padWidth
 var dpi: Float = 150.0
-var newFormat: String = ""
+var newFormatForSips: String = ""
 var formatExtension: String = "png"
 var doCrop: Bool = false
 var doPad: Bool = false
@@ -48,6 +54,7 @@ var prevArg: String = ""
 var fileCount: Int = 0
 
 
+// MARK: - Functions
 
 func getFullPath(_ relativePath: String) -> String {
 
@@ -79,12 +86,10 @@ func processRelativePath(_ relativePath: String) -> String {
 
 func getFileSize(_ path: String) -> Int {
 
-    // Report the file size
-    // NOTE 'file' contains a file name, not a path, so we need to add
-    //      'sourcePath' to it when working at file level
+    // Report the size of the file at the specified absolute path.
+    // Default to 0 for a missing file
 
-    let workPath = "\(sourcePath)/\(path)"
-    let data: Data = fm.contents(atPath: workPath) ?? Data.init(count: 0)
+    let data: Data = fm.contents(atPath: path) ?? Data.init(count: 0)
     return data.count
 }
 
@@ -95,176 +100,123 @@ func processFile(_ file: String) {
     // NOTE 'file' contains a file name, not a path, so we need to add
     //      'sourcePath' to it when working at file level
 
-    // Get the file extension to see if we're dealing with a valid image filethank
+    // Get the file extension
     let ext = (file.lowercased() as NSString).pathExtension
 
     // Only proceed if we have a file of the correct extension
-    if ext == "png" || ext == "jpg" || ext == "jpeg" || ext == "tif" || ext == "tiff" {
-        // Determine this file's output file path
-        var outFile = "\(destPath)"
-        if destIsdirectory.boolValue {
-            outFile += "/\(file)"
-        } else {
-            // Destination is a specified file
-            outFile += "/\(destFile)"
+    if !SUPPORTED_TYPES.contains(ext) { return }
+
+    // Determine the file's output file path
+    var outputFile = destPath + "/"
+    if destIsdirectory.boolValue {
+        // Target's a directory, so add the file name
+        outputFile += file
+    } else {
+        // Destination is a specified file
+        outputFile += destFile
+    }
+
+    // Get the full source image path
+    let inputFile = "\(sourcePath)/\(file)"
+
+    // Only proceed if the source image file is non-zero
+    if getFileSize(inputFile) == 0 {
+        report("File \(file) has no content -- skipping")
+        return
+    }
+
+    // Report process
+    report("Processing \(inputFile) as \(outputFile)...")
+
+    // Set the temporary work file path
+    let tmpFile = outputFile + ".sipstmp"
+
+    // Make the temporary work file. It's a TIFF so we need to
+    // check the source image type first
+    if ext == "tif" || ext == "tiff" {
+        // Source image IS a TIFF...
+        if inputFile != outputFile {
+            // ...but it's not at the same location as the output file,
+            // so just copy it across
+            do {
+               try fm.copyItem(at: URL.init(fileURLWithPath: inputFile),
+                               to: URL.init(fileURLWithPath: tmpFile))
+            } catch {
+                report("Error -- Could not write \(outputFile) -- skipping")
+                return
+            }
         }
+    }  else {
+        // The source is not a TIFF, so just create the temp file
+        runSips([inputFile, "-s", "format", "tiff", "--out", tmpFile])
+    }
 
-        #if DEBUG
-        print("CURRENT TARGET FILE: \(outFile)")
-        #endif
+    // First process actions on the temporary work file
+    // Crop the file, if requested
+    if doCrop {
+        runSips([tmpFile, "-c", "\(cropHeight)", "\(cropWidth)", "--padColor", padColour])
+    }
 
-        // Only proceed if the file is non-zero
-        if getFileSize(file) == 0 {
-            readout("File \(file) has no content -- skipping")
+    // Pad the file, if requested
+    if doPad {
+        runSips([tmpFile, "-p", "\(padHeight)", "\(padWidth)", "--padColor", padColour])
+    }
+
+    // Scale the file, if requested
+    if doScale {
+        runSips([tmpFile, "-z", "\(scaleHeight)", "\(scaleWidth)", "--padColor", padColour])
+    }
+
+    // Set the DPI, if requested
+    if doChangeResolution {
+        runSips([tmpFile, "-s", "dpiHeight", "\(dpi)", "-s", "dpiWidth", "\(dpi)"])
+    }
+
+    // Set the image format, if requested
+    if doReformat {
+        // Whatever the image type, we output the new format
+        // as a new file with the correct extension
+        let newOutputFile = (outputFile as NSString).deletingPathExtension + "." + formatExtension
+
+        if fm.fileExists(atPath: newOutputFile) && !doOverwrite {
+            // Uh oh! There's already a file there and we have not set the 'do overwrite' flag
+            report("Error -- target file \(newOutputFile) already exists -- skipping")
             return
         }
 
-        let source = "\(sourcePath)/\(file)"
+        // Create new-format file from the work file
+        runSips([tmpFile, "-s", "format", newFormatForSips, "--out", newOutputFile])
+    } else {
+        // We're not reformatting the file, so write it back
+        // using the source type (by its file extension)
+        runSips([tmpFile, "-s", "format", processFormat(ext), "--out", outputFile])
+    }
 
-        // Copy the file before editing...
-        if source != outFile {
-            // Does the file already exist at its destination?
-            if fm.fileExists(atPath: outFile) {
-                // Yes...
-                if !doOverwrite {
-                    // ...but bail because we're not overwriting
-                    readout("Error -- target file \(outFile) already exists -- skipping")
-                    return
-                }
+    // Remove the temporary work file now we're done
+    let success = removeFile(tmpFile)
+    if !success {
+        report("Error -- Could not delete temporary file \(tmpFile) after processing")
+    }
 
-                // ... so delete the to-be-overwritten file
-                let success = removeFile(outFile)
-                if !success {
-                    readout("Error -- Could not overwrite \(outFile) -- skipping")
-                    return
-                }
-            }
-
-            // There's nothing in the way of the copy (target non-existent or now deleted)
-            // so gp ahead and make it so
-            do {
-               try fm.copyItem(at: URL.init(fileURLWithPath: source),
-                                to: URL.init(fileURLWithPath: outFile))
-            } catch {
-                readout("Error -- Could not write \(outFile) -- skipping")
-                return
-            }
-        }
-
-        // Report process
-        readout("Processing \(file) as \(outFile)...")
-
-        // We haven't (yet) altered the image's resolution
-        didChangeResolution = false
-
-        // Set the format (and perform the copy)
-        if doReformat {
-            // If we're converting from PNG or TIFF, perform a dpi change
-            // BEFORE converting to the target format and mark as done
-            if doChangeResolution {
-                if ext == "png" || ext == "tif" || ext == "tiff" {
-                    runSips([outFile, "-s", "dpiHeight", "\(dpi)", "-s", "dpiWidth", "\(dpi)"])
-                    //didChangeResolution = true
-                    print(":::")
-                }
-            }
-
-            // Whatever the image type, output the new format as a new file
-            let newOutFile = (outFile as NSString).deletingPathExtension + "." + formatExtension
-
-            #if DEBUG
-            print("NEW FORMAT FILE: \(newOutFile)")
-            #endif
-
-            if fm.fileExists(atPath: newOutFile) && !doOverwrite {
-                // Uh oh! There's already a file there
-                readout("Error -- target file \(newOutFile) already exists -- skipping")
-                return
-            }
-
-            runSips([outFile, "-s", "format", "\(newFormat)", "--out", newOutFile])
-
-            // If we need to, delete the old source file
-            if source != outFile {
-                let success = removeFile(outFile)
-                if !success {
-                    readout("Error -- Could not delete \(outFile) after processing")
-                }
-            }
-
-            // Set the work file to reference the new (format) file
-            outFile = newOutFile
-        }
-
-        // Crop the file, as requested
-        if doCrop {
-            runSips([outFile, "-c", "\(cropHeight)", "\(cropWidth)", "--padColor", "\(padColour)"])
-        }
-
-        // Pad the file, as requested
-        if doPad {
-            runSips([outFile, "-p", "\(padHeight)", "\(padWidth)", "--padColor", "\(padColour)"])
-        }
-
-        // Scale the file, as requested
-        if doScale {
-            runSips([outFile, "-z", "\(scaleHeight)", "\(scaleWidth)", "--padColor", "\(padColour)"])
-        }
-
-        // Set the DPI if we need to and have not done so yet (see above)
-        if doChangeResolution && !didChangeResolution {
-            if ext == "ejpg" || ext == "ejpeg" {
-                // sips does not apply dpi settings to JPEGs (why???) so if the target image is a JPEG,
-                // convert it to PNG, apply the dpi settings and then convert it back again.
-                let tmpFile = outFile + ".sipstmp"
-                runSips([outFile, "-s", "format", "png", "--out", tmpFile])
-                runSips([tmpFile, "-s", "dpiHeight", "\(dpi)", "-s", "dpiWidth", "\(dpi)"])
-                runSips([tmpFile, "-s", "format", "jpeg", "--out", outFile])
-
-                let success = removeFile(tmpFile)
-                if !success {
-                    readout("Error -- Could not delete temporary file \(tmpFile) after processing")
-                }
-            } else {
-                // For all other image types, just do the DPI change
-                runSips([outFile, "-s", "dpiHeight", "\(dpi)", "-s", "dpiWidth", "\(dpi)"])
-            }
-        }
-
-        // Increment the file counter
-        fileCount += 1
-
-        // Remove the source file if requested
-        if doDeleteSource {
-            let success = removeFile(source)
-            if !success {
-                readout("Error -- HelloCould not delete \(source) after processing")
-            }
+    // Remove the source file, if requested
+    if doDeleteSource {
+        let success = removeFile(inputFile)
+        if !success {
+            report("Error -- Could not delete source file \(inputFile) after processing")
         }
     }
+
+    // Increment the file counter
+    fileCount += 1
 }
 
 
 func removeFile(_ path: String) -> Bool {
 
-    // Generic file remover
+    // Generic file remover called from 'processFile()'
 
-    do {
-        try fm.removeItem(at: URL.init(fileURLWithPath: path))
-    } catch {
-        return false
-    }
-
+    do { try fm.removeItem(at: URL.init(fileURLWithPath: path)) } catch { return false }
     return true
-}
-
-
-func readout(_ message: String) {
-
-    // Generic 'log message if we need to' routine
-
-    if !doShowMessages { return }
-    print(message)
 }
 
 
@@ -284,8 +236,7 @@ func runSips(_ args: [String]) {
     do {
         try task.run()
     } catch {
-        print("Error -- Cannot locate sips -- exiting")
-        exit(1)
+        reportError("Cannot locate sips")
     }
 
     // Block until the task has completed (short tasks ONLY)
@@ -294,7 +245,6 @@ func runSips(_ args: [String]) {
     if !task.isRunning {
         if (task.terminationStatus != 0) {
             // Command failed -- collect the output if there is any
-            // DOES THIS EVEN WORK?
             let outputHandle = outputPipe.fileHandleForReading
             var outString: String = ""
             if outputHandle.availableData.count > 0 {
@@ -306,31 +256,65 @@ func runSips(_ args: [String]) {
             if outString.count > 0 {
                 print("Error -- sips reported an error: \(outString)")
             } else {
-                print("Error -- sips exited with code \(task.terminationStatus)")
+                print("Error -- sips reported error code \(task.terminationStatus) -- task not completed")
             }
         }
     }
 }
 
 
+func report(_ message: String) {
+
+    // Generic message display routine
+
+    if doShowMessages { print(message) }
+}
+
+
+func reportError(_ message: String, _ code: Int32 = 1) {
+
+    // Generic error display routine
+
+    print("Error -- " + message + " -- exiting")
+    exit(code)
+}
+
+
 func processColour(_ colourString: String) -> String {
 
-    // Take a hex colour and remove any preceeding characters
+    // Take a colour value input, make sure it's hex and clean it up for sips
 
     var workColour = colourString
+
+    // Remove any preceeding hex markers
     while true {
         var match: Bool = false
 
-        for prefixString in ["#", "0x", "\\x", "x"] {
+        for prefixString in ["#", "0x", "\\x", "x", "$"] {
             if (workColour as NSString).hasPrefix(prefixString) {
                 workColour = String(workColour.suffix(workColour.count - prefixString.count))
                 match = true
             }
         }
 
-        if !match {
-            break
-        }
+        if !match { break }
+    }
+
+    // Check for an out-of-range value
+    if workColour.count > 6 {
+        reportError("Invalid hex colour value supplied \(colourString)")
+    }
+
+    // Check it's actually hex (or makes sense as hex)
+    let scanner = Scanner.init(string: workColour)
+    var dummy: UInt32 = 0
+    if !scanner.scanHexInt32(&dummy) {
+        reportError("Invalid hex colour value supplied \(colourString)")
+    }
+
+    // Pre-pad the hex string up to six characters
+    if workColour.count < 6 {
+        workColour = String(EMPTY_HEX_BYTES.prefix(6 - workColour.count)) + workColour
     }
 
     return workColour
@@ -344,7 +328,10 @@ func processFormat(_ formatString: String) -> String {
 
     var workFormat = formatString.lowercased()
     var valid: Bool = false
-    formatExtension = workFormat
+
+    // Store the expected format as provided by the user --
+    // this is later used to set the target's file extension
+    formatExtension = formatString
 
     if workFormat == "jpg" {
         valid = true
@@ -354,7 +341,6 @@ func processFormat(_ formatString: String) -> String {
     } else if workFormat == "tif" {
         valid = true
         workFormat = "tiff"
-        formatExtension = "tiff"
     } else if workFormat == "tiff" {
         valid = true
     } else if workFormat == "png" {
@@ -363,8 +349,7 @@ func processFormat(_ formatString: String) -> String {
 
     // If we don't have a good format, bail
     if !valid {
-        print("Invalid image format selected: \(workFormat) -- exiting")
-        exit(1)
+        reportError("Invalid image format selected: \(workFormat)")
     }
 
     return workFormat
@@ -376,6 +361,7 @@ func showHelp() {
     // Read in app version from info.plist
 
     showHeader()
+
     print("A macOS image preparation utility\n")
     print("Usage:\n    imageprep [-s path] [-d path] [-c padColour]")
     print("                      [-a s scale_height scale_width] ")
@@ -385,7 +371,8 @@ func showHelp() {
     print("    NOTE You can select either crop, pad or scale or all three, but actions will always")
     print("         be performed in this order: pad, then crop, then scale.\n")
     print("Options:")
-    print("    -s / --source      [path]                  The path to an image or a directory of images. Default: current working directory.")
+    print("    -s / --source      [path]                  The path to an image or a directory of images.")
+    print("                                               Default: current working directory.")
     print("    -d / --destination [path]                  The path to the images. Default: source directory.")
     print("    -a / --action      [type] [width] [height] The crop/pad dimensions. Type is s (scale), c (crop) or p (pad).")
     print("    -c / --colour      [colour]                The padding colour in Hex, eg. A1B2C3. Default: FFFFFF.")
@@ -394,7 +381,7 @@ func showHelp() {
     print("    -o / --overwrite                           Overwrite an existing file. Without this, existing files will be kept.")
     print("    -k / --keep                                Keep the source file. Without this, the source will be deleted.")
     print("    -q / --quiet                               Silence output messages (errors excepted).")
-    print("    -h / --help                                This help screen.")
+    print("    -h / --help                                This help screen.\n")
 }
 
 
@@ -403,6 +390,7 @@ func showVersion() {
     // Display the utility's version
 
     showHeader()
+
     print("\nCopyright 2020, Tony Smith (@smittytone). Source code available under the MIT licence.\n")
 }
 
@@ -417,21 +405,21 @@ func showHeader() {
 }
 
 
-
 // MARK: - Runtime Start
 
 for argument in CommandLine.arguments {
 
+    // Ignore the first comand line argument
     if argCount == 0 {
         argCount += 1
         continue
     }
 
+    // Are we expecting a value? If so 'argValue' is not zero
     if argValue != 0 {
-        // Make sure we're not reading in an option rather than a value
+        // Make sure we have a value to read
         if argument.prefix(1) == "-" {
-            print("Error -- Missing value for \(prevArg) -- exiting")
-            exit(1)
+            reportError("Missing value for \(prevArg)")
         }
 
         switch argValue {
@@ -443,8 +431,11 @@ for argument in CommandLine.arguments {
             padColour = processColour(argument)
         case 4:
             dpi = Float(argument) ?? 150.0
+            if dpi == 0.0 {
+                reportError("Invalid DPI value selected: 0.0")
+            }
         case 5:
-            newFormat = processFormat(argument)
+            newFormatForSips = processFormat(argument)
         case 6:
             actionType = argument
         case 7:
@@ -472,8 +463,7 @@ for argument in CommandLine.arguments {
                 if padHeight == 0 { doPad = false }
             }
         default:
-            print("Error -- Unknown value: \(argument) -- exiting")
-            exit(1)
+            reportError("Unknown value: \(argument)")
         }
 
         if argValue > 5 && argValue < 8 {
@@ -482,6 +472,7 @@ for argument in CommandLine.arguments {
             argValue = 0
         }
     } else {
+        // Parse the next non-value argument
         switch argument.lowercased() {
         case "-s":
             fallthrough
@@ -505,8 +496,8 @@ for argument in CommandLine.arguments {
         case "-f":
             fallthrough
         case "--format":
-            doReformat = true
             argValue = 5
+            doReformat = true
         case "-a":
             fallthrough
         case "--action":
@@ -532,8 +523,7 @@ for argument in CommandLine.arguments {
             showVersion()
             exit(0)
         default:
-            print("Error -- Unknown argument: \(argument) -- exiting")
-            exit(1)
+            reportError("Unknown argument: \(argument)")
         }
 
         prevArg = argument
@@ -543,65 +533,51 @@ for argument in CommandLine.arguments {
 
     // Trap commands that come last and therefore have missing args
     if argCount == CommandLine.arguments.count && argValue > 0 {
-        print("Error -- Missing value for \(argument) -- exiting")
-        exit(1)
+        reportError("Missing value for \(argument)")
     }
 }
 
 // Get the full source path
-// NOTE At this point they may be single filenames
+// NOTE It may point to a single file
 sourcePath = getFullPath(sourcePath)
 
-// Check that the source is a directory or a file
-// If neither exists, we have to bail
+// Check whether the source is a directory or a file,
+// and if neither exists, bail
 if !fm.fileExists(atPath: sourcePath, isDirectory: &sourceIsdirectory) {
-    print("Error -- Source \(sourcePath) cannot be found -- exiting")
-    exit(1)
+    reportError("Source \(sourcePath) cannot be found")
 }
 
-// Do we have a source file or a source directory
+// If the source points to a file, get the components
 if !sourceIsdirectory.boolValue {
-    // The source points to a file, so extract the file
     sourceFile = (sourcePath as NSString).lastPathComponent
     sourcePath = (sourcePath as NSString).deletingLastPathComponent
 }
 
-#if DEBUG
-print("SOURCE DIR.: \(sourcePath)")
-print("SOURCE FILE: \(sourceFile)")
-#endif
-
 // Get full destination path
-// NOTE At this point it may be a single filename
+// NOTE It may point to a single file
 destPath = getFullPath(destPath)
 
+// Check whether the source is a directory or a file
 if !fm.fileExists(atPath: destPath, isDirectory: &destIsdirectory) {
-    // Destination is missing -- this is valid if the destination is a file,
+    // Destination is missing but this is valid if the destination is a file,
     // so check its extension before bailing
     if (destPath as NSString).pathExtension.count == 0 {
-        // No file extension, ergo this is a directory
-        print("Destination \(destPath) cannot be found -- exiting")
-        exit(1)
+        // No file extension, ergo this is a directory, so bail
+        reportError("Destination \(destPath) cannot be found")
     }
 }
 
-// Do we have a destination file or a destination directory
+// If the destination points to a file, get the components
 if !destIsdirectory.boolValue {
     // The source points to a file, so extract the file
     destFile = (destPath as NSString).lastPathComponent
     destPath = (destPath as NSString).deletingLastPathComponent
 }
 
-#if DEBUG
-print("DEST. DIR.: \(destPath)")
-print("DEST FILE: \(destFile)")
-#endif
-
 // If the source is a directory and the target is a file, that's a mismatch
 // we can't resolve, so warn and bail
 if sourceIsdirectory.boolValue && !destIsdirectory.boolValue {
-    print("Source (dirctory) and destination (file) are mismatched -- exiting")
-    exit(1)
+    reportError("Source (dirctory) and destination (file) are mismatched")
 }
 
 // Auto-enable 'keep files' if the source and destination are the same
@@ -611,15 +587,16 @@ if sourcePath == destPath && sourceFile == destFile {
 
 // Output the source and destination directories
 if doShowMessages {
-    print("Source: \(sourcePath)" + (sourceFile.count > 0 ? "/\(sourceFile)" : ""))
-    print("Target: \(destPath)" + (destFile.count > 0 ? "/\(destFile)" : ""))
+    print("Source: \(sourcePath)/" + (sourceFile.count > 0 ? "\(sourceFile)" : ""))
+    print("Target: \(destPath)/" + (destFile.count > 0 ? "\(destFile)" : ""))
     if doChangeResolution { print("New DPI: \(dpi)") }
+    if doReformat { print("New image format: \(newFormatForSips)") }
 }
 
-// Split for a single source file or source directory
+// Split the path for a single source file or source directory
 if sourceIsdirectory.boolValue {
     // Source file is a directory, so enumerate its contents
-    // and then process each one, one by one
+    // and then process all the files, one by one
     if let fileEnumeration = fm.enumerator(atPath: sourcePath) {
         for file in fileEnumeration {
             processFile("\(file)")
