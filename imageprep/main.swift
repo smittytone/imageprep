@@ -559,6 +559,11 @@ for argument in CommandLine.arguments {
     }
 }
 
+// Has anything been done?
+if actions.count == 0 && !doReformat && !doChangeResolution {
+    reportError("No actions specified")
+}
+
 // Get the full source path
 // NOTE It may point to a single file
 sourcePath = getFullPath(sourcePath)
