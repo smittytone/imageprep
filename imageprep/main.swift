@@ -46,6 +46,8 @@ var didChangeResolution: Bool = false
 var doShowMessages: Bool = true
 var doDeleteSource: Bool = true
 
+var actions: NSMutableArray = NSMutableArray.init()
+
 // CLI argument management
 var argValue: Int = 0
 var argCount: Int = 0
@@ -152,7 +154,7 @@ func processFile(_ file: String) {
     }
 
     // First process actions on the temporary work file
-    // Crop the file, if requested
+    /* Crop the file, if requested
     if doCrop {
         runSips([tmpFile, "-c", "\(cropHeight)", "\(cropWidth)", "--padColor", padColour])
     }
@@ -165,6 +167,14 @@ func processFile(_ file: String) {
     // Scale the file, if requested
     if doScale {
         runSips([tmpFile, "-z", "\(scaleHeight)", "\(scaleWidth)", "--padColor", padColour])
+    }
+     */
+
+    if actions.count > 0 {
+        for i: Int in 0..<actions.count {
+            let action: Action = actions.object(at: i) as! Action
+            runSips([tmpFile, action.type, "\(action.height)", "\(action.width)", "--padColor", action.colour])
+        }
     }
 
     // Set the DPI, if requested
@@ -364,10 +374,10 @@ func showHelp() {
 
     print("A macOS image preparation utility\n")
     print("Usage:\n    imageprep [-s path] [-d path] [-c pad_colour]")
-    print("                      [-a s scale_height scale_width] ")
-    print("                      [-a p pad_height pad_width]")
-    print("                      [-a c crop_height crop_width] ")
-    print("                      [-r] [-f] [-k] [-o] [-h]\n")
+    print("              [-a s scale_height scale_width] ")
+    print("              [-a p pad_height pad_width]")
+    print("              [-a c crop_height crop_width] ")
+    print("              [-r] [-f] [-k] [-o] [-h]\n")
     print("    NOTE You can select either crop, pad or scale or all three, but actions will always")
     print("         be performed in this order: pad, then crop, then scale.\n")
     print("Options:")
@@ -442,25 +452,37 @@ for argument in CommandLine.arguments {
             // Set widths based on action and set the action flag if the value is good
             if actionType == "c" {
                 cropWidth = Int(argument) ?? 0
-                if cropWidth != 0 { doCrop = true }
+                if cropWidth > 0 { doCrop = true }
             } else if actionType == "s" {
                 scaleWidth = Int(argument) ?? 0
-                if scaleWidth != 0 { doScale = true }
+                if scaleWidth > 0 { doScale = true }
             } else {
                 padWidth = Int(argument) ?? 0
-                if padWidth != 0 { doPad = true }
+                if padWidth > 0 { doPad = true }
             }
         case 8:
             // Set heights based on action, but clear the action flag if the value is bad
             if actionType == "c" {
                 cropHeight = Int(argument) ?? 0
-                if cropHeight == 0 { doCrop = false }
+                if cropHeight > 0 {
+                    actions.add(Action.init("-c", cropWidth, cropHeight, padColour))
+                } else {
+                    doCrop = false
+                }
             } else if actionType == "s" {
                 scaleHeight = Int(argument) ?? 0
-                if scaleHeight == 0 { doScale = false }
+                if scaleHeight > 0 {
+                    actions.add(Action.init("-z", scaleWidth, scaleHeight, padColour))
+                } else {
+                    doScale = false
+                }
             } else {
                 padHeight = Int(argument) ?? 0
-                if padHeight == 0 { doPad = false }
+                if padHeight > 0 {
+                    actions.add(Action.init("-p", padWidth, padHeight, padColour))
+                } else {
+                    doPad = false
+                }
             }
         default:
             reportError("Unknown value: \(argument)")

@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		3B283B96256EACCF002B999D /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B283B95256EACCF002B999D /* main.swift */; };
+		3BF352A325756308009F8D72 /* Action.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BF352A225756308009F8D72 /* Action.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -26,6 +27,7 @@
 		3B283B92256EACCF002B999D /* imageprep */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = imageprep; sourceTree = BUILT_PRODUCTS_DIR; };
 		3B283B95256EACCF002B999D /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		3B283B9D256EAD4E002B999D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		3BF352A225756308009F8D72 /* Action.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Action.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -59,6 +61,7 @@
 			isa = PBXGroup;
 			children = (
 				3B283B95256EACCF002B999D /* main.swift */,
+				3BF352A225756308009F8D72 /* Action.swift */,
 				3B283B9D256EAD4E002B999D /* Info.plist */,
 			);
 			path = imageprep;
@@ -122,6 +125,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3B283B96256EACCF002B999D /* main.swift in Sources */,
+				3BF352A325756308009F8D72 /* Action.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -249,7 +253,7 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
-				CURRENT_PROJECT_VERSION = 34;
+				CURRENT_PROJECT_VERSION = 35;
 				DEVELOPMENT_TEAM = Y5J3K52DNA;
 				DSTROOT = $SRCROOT/build/pkgroot;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -270,7 +274,7 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
-				CURRENT_PROJECT_VERSION = 34;
+				CURRENT_PROJECT_VERSION = 35;
 				DEVELOPMENT_TEAM = Y5J3K52DNA;
 				DSTROOT = $SRCROOT/build/pkgroot;
 				ENABLE_HARDENED_RUNTIME = YES;
