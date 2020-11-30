@@ -1,8 +1,10 @@
-
-//  main.swift
-//  imageprep
-//
-//  Created by Tony Smith on 25/11/2020.
+/*
+ *
+ *  imageprep
+ *
+ * Created by Tony Smith on 25/11/2020
+ *
+ */
 
 import Foundation
 import Cocoa
@@ -127,9 +129,6 @@ func processFile(_ file: String) {
         return
     }
 
-    // Report process
-    report("Processing \(inputFile) as \(outputFile)...")
-
     // Set the temporary work file path
     let tmpFile = outputFile + ".sipstmp"
 
@@ -196,6 +195,7 @@ func processFile(_ file: String) {
 
         // Create new-format file from the work file
         runSips([tmpFile, "-s", "format", newFormatForSips, "--out", newOutputFile])
+        outputFile = newOutputFile
     } else {
         // We're not reformatting the file, so write it back
         // using the source type (by its file extension)
@@ -218,6 +218,9 @@ func processFile(_ file: String) {
 
     // Increment the file counter
     fileCount += 1
+    
+    // Report process
+    report("Image \(inputFile) processed to \(outputFile)...")
 }
 
 
@@ -630,7 +633,9 @@ if doShowMessages {
 if sourceIsdirectory.boolValue {
     // Source file is a directory, so enumerate its contents
     // and then process all the files, one by one
+    
     if let fileEnumeration = fm.enumerator(atPath: sourcePath) {
+        fileEnumeration.skipDescendents()
         for file in fileEnumeration {
             processFile("\(file)")
         }
@@ -649,4 +654,9 @@ if doShowMessages {
     } else {
         print("No files converted")
     }
+}
+
+// Tidy up
+if actions.count > 0 {
+    actions.removeAllObjects()
 }
