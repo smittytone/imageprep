@@ -3,17 +3,16 @@
  *
  * imageprep
  *
- *  Created by Tony Smith on 30/11/2020.
+ * Created by Tony Smith on 30/11/2020.
  *
  */
-
 import Foundation
 import Cocoa
 
 
 /*
  *
- * Simple class to hold image processing actions.
+ * A simple class to hold image processing actions.
  * These will be held in an array by the main program.
  *
  */
