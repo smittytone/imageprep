@@ -156,9 +156,9 @@ func processFile(_ file: String) {
     if actions.count > 0 {
         for i: Int in 0..<actions.count {
             let action: Action = actions.object(at: i) as! Action
-            if action.type == "-s" {
+            if action.type == "-z" {
                 // Do a separate scale action to avoid losing alpha
-                runSips([tmpFile, "-s", "\(action.height)", "\(action.width)"])
+                runSips([tmpFile, action.type, "\(action.height)", "\(action.width)"])
             } else {
                 runSips([tmpFile, action.type, "\(action.height)", "\(action.width)", "--padColor", action.colour])
             }
@@ -393,7 +393,7 @@ func showVersion() {
 
     showHeader()
 
-    print("\nCopyright 2020, Tony Smith (@smittytone). Source code available under the MIT licence.\n")
+    print("Copyright 2020, Tony Smith (@smittytone). Source code available under the MIT licence.\n")
 }
 
 
