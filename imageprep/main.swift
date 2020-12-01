@@ -153,26 +153,15 @@ func processFile(_ file: String) {
     }
 
     // First process actions on the temporary work file
-    /* Crop the file, if requested
-    if doCrop {
-        runSips([tmpFile, "-c", "\(cropHeight)", "\(cropWidth)", "--padColor", padColour])
-    }
-
-    // Pad the file, if requested
-    if doPad {
-        runSips([tmpFile, "-p", "\(padHeight)", "\(padWidth)", "--padColor", padColour])
-    }
-
-    // Scale the file, if requested
-    if doScale {
-        runSips([tmpFile, "-z", "\(scaleHeight)", "\(scaleWidth)", "--padColor", padColour])
-    }
-     */
-
     if actions.count > 0 {
         for i: Int in 0..<actions.count {
             let action: Action = actions.object(at: i) as! Action
-            runSips([tmpFile, action.type, "\(action.height)", "\(action.width)", "--padColor", action.colour])
+            if action.type == "-s" {
+                // Do a separate scale action to avoid losing alpha
+                runSips([tmpFile, "-s", "\(action.height)", "\(action.width)"])
+            } else {
+                runSips([tmpFile, action.type, "\(action.height)", "\(action.width)", "--padColor", action.colour])
+            }
         }
     }
 
@@ -218,7 +207,7 @@ func processFile(_ file: String) {
 
     // Increment the file counter
     fileCount += 1
-    
+
     // Report process
     report("Image \(inputFile) processed to \(outputFile)...")
 }
@@ -633,7 +622,7 @@ if doShowMessages {
 if sourceIsdirectory.boolValue {
     // Source file is a directory, so enumerate its contents
     // and then process all the files, one by one
-    
+
     if let fileEnumeration = fm.enumerator(atPath: sourcePath) {
         fileEnumeration.skipDescendents()
         for file in fileEnumeration {
