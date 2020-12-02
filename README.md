@@ -22,7 +22,7 @@ For more detailed guidance on using *imageprep*, please [see this page](https://
 | `-a` | `--action` | `{type}{width}{height}` | The crop/pad dimensions. Type is s (scale), c (crop) or p (pad) |
 | `-c` | `--colour` | `{colour}` | The padding colour in Hex, eg. A1B2C3. Default: FFFFFF |
 | `-r` | `--resolution` | `{dpi}` | Set the image dpi, eg. 300 |
-| `-f` | `--format` | `{format}` | Set the image format: JPG/JPEG, PNG or TIF/TIFF |
+| `-f` | `--format` | `{format}` | Set the image format: JPG/JPEG, PNG, GIF, BMP or TIF/TIFF |
 | `-o` | `--overwrite` |  | Overwrite an existing file. Without this, existing files will be kept |
 | `-k` | `--keep` |  | Keep the source file. Without this, the source will be deleted |
 | `-q` | `--quiet` |  | Silence output messages (errors excepted) |
@@ -32,15 +32,15 @@ For more detailed guidance on using *imageprep*, please [see this page](https://
 
 ## Release Notes ##
 
-- 6.0.0 *Unreleased*
+- 6.0.0 *2 December 2020*
     - Initial public release.
 
 **Note** Released as version 6.0.0 for historical reasons: previous versions were released in the form of shell scripts.
 
 ## Copyright ##
 
-imageprep is copyright &copy; 2020, Tony Smith.
+*imageprep* is copyright &copy; 2020, Tony Smith.
 
 ## Licence ##
 
-imageprep’s source code is issued under the [MIT Licence](./LICENSE).
+*imageprep*’s source code is issued under the [MIT Licence](./LICENSE).
