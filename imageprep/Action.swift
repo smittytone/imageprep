@@ -15,6 +15,14 @@ import Cocoa
  * A simple class to hold image processing actions.
  * These will be held in an array by the main program.
  *
+ * 'type' -- the action to be performed:
+ *           -c -- crop
+ *           -p -- pad
+ *           -z -- scale
+ * 'width' -- the width of the image after the action
+ * 'height' -- the height of the image after the action
+ * 'colour' -- the current pad colour (ignored on scale actions)
+ *
  */
 class Action {
 
