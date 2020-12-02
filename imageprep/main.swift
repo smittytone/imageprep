@@ -11,7 +11,8 @@ import Cocoa
 
 // MARK: - Constants
 
-let SUPPORTED_TYPES = ["png", "jpg", "jpeg", "tif", "tiff"]
+let SUPPORTED_TYPES = ["png", "jpeg", "tiff", "pict", "bmp", "gif", "jpg", "tif"]
+let DEDUPE_INDEX = 6
 let EMPTY_HEX_BYTES = "000000"
 
 
@@ -334,23 +335,24 @@ func processFormat(_ formatString: String) -> String {
     // this is later used to set the target's file extension
     formatExtension = formatString
 
-    if workFormat == "jpg" {
-        valid = true
-        workFormat = "jpeg"
-    } else if workFormat == "jpeg" {
-        valid = true
-    } else if workFormat == "tif" {
-        valid = true
-        workFormat = "tiff"
-    } else if workFormat == "tiff" {
-        valid = true
-    } else if workFormat == "png" {
-        valid = true
+    // Check for a valid format
+    for format in SUPPORTED_TYPES {
+        if format == workFormat {
+            valid = true
+            break
+        }
     }
 
     // If we don't have a good format, bail
     if !valid {
         reportError("Invalid image format selected: \(workFormat)")
+    }
+
+    // Handle duplicate extensions
+    if workFormat == "jpg" {
+        workFormat = "jpeg"
+    } else if workFormat == "tif" {
+        workFormat = "tiff"
     }
 
     return workFormat
@@ -363,6 +365,12 @@ func showHelp() {
 
     showHeader()
 
+    // Get the list of suported formats, ignoring similarly named ones
+    var formats: String = ""
+    for i: Int in 0..<DEDUPE_INDEX {
+        formats += (SUPPORTED_TYPES[i].uppercased() + (i < DEDUPE_INDEX - 1 ? ", " : ""))
+    }
+
     print("A macOS image preparation utility\n")
     print("Usage:\n    imageprep [-s path] [-d path] [-c pad_colour]")
     print("              [-a s scale_height scale_width] ")
@@ -371,6 +379,7 @@ func showHelp() {
     print("              [-r] [-f] [-k] [-o] [-h]\n")
     print("    NOTE You can select either crop, pad or scale or all three, but actions will always")
     print("         be performed in this order: pad, then crop, then scale.\n")
+    print("    NOTE Image formats supported: \(formats).\n")
     print("Options:")
     print("    -s / --source      [path]                  The path to an image or a directory of images.")
     print("                                               Default: current working directory.")
@@ -378,7 +387,7 @@ func showHelp() {
     print("    -a / --action      [type] [width] [height] The crop/pad dimensions. Type is s (scale), c (crop) or p (pad).")
     print("    -c / --colour      [colour]                The padding colour in Hex, eg. A1B2C3. Default: FFFFFF.")
     print("    -r / --resolution  [dpi]                   Set the image dpi, eg. 300.")
-    print("    -f / --format      [format]                Set the image format: JPG/JPEG, PNG or TIF/TIFF.")
+    print("    -f / --format      [format]                Set the image format.")
     print("    -o / --overwrite                           Overwrite an existing file. Without this, existing files will be kept.")
     print("    -k / --keep                                Keep the source file. Without this, the source will be deleted.")
     print("    -q / --quiet                               Silence output messages (errors excepted).")
