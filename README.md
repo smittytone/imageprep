@@ -12,6 +12,7 @@ imageprep [-s path] [-d path] [-c pad_colour] \
           [-r] [-f] [-k] [-o] [-h]
 ```
 
+For more detailed guidance on using *imageprep*, please [see this page](https://smittytone.net/imageprep/).
 ### Options ###
 
 | Switch | Alternative&nbsp;Switch | Argument(s) | Description |
