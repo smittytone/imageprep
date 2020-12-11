@@ -46,6 +46,9 @@ var destFile: String = ""
 var destIsdirectory: ObjCBool = false
 var doOverwrite: Bool = false
 
+// FROM 6.1.0
+var doMakeSubDirectories: Bool = false
+
 // Image attributes and action flags
 var padColour: String = "FFFFFF"
 var cropHeight: Int = 2182
@@ -116,6 +119,29 @@ func getFileSize(_ path: String) -> Int {
 }
 
 
+func processDirectory(_ path: String) {
+
+    // FROM 6.1.0
+    // If we are to create all the directories to 'path', attempt to do so,
+    // or just bail in other cases
+
+    if doMakeSubDirectories {
+        // Try to create the path to the specified directory
+        do {
+            try fm.createDirectory(at: URL.init(fileURLWithPath: path),
+                                   withIntermediateDirectories: true,
+                                   attributes: nil)
+
+        } catch {
+            reportErrorAndExit("Destination \(path) does not exist and cannot be created")
+        }
+    } else {
+        // Directory doesn't exist, we've not been told to create it, so bail
+        reportErrorAndExit("Destination \(destPath) cannot be found")
+    }
+}
+
+
 func processFile(_ file: String) {
 
     // Process a single source image file
@@ -161,7 +187,7 @@ func processFile(_ file: String) {
                try fm.copyItem(at: URL.init(fileURLWithPath: inputFile),
                                to: URL.init(fileURLWithPath: tmpFile))
             } catch {
-                report("Error -- Could not write \(outputFile) -- skipping")
+                reportError("Could not write \(outputFile) -- skipping")
                 return
             }
         }
@@ -196,7 +222,7 @@ func processFile(_ file: String) {
 
         if fm.fileExists(atPath: newOutputFile) && !doOverwrite {
             // Uh oh! There's already a file there and we have not set the 'do overwrite' flag
-            report("Error -- target file \(newOutputFile) already exists -- skipping")
+            reportError("target file \(newOutputFile) already exists -- skipping")
             return
         }
 
@@ -212,14 +238,14 @@ func processFile(_ file: String) {
     // Remove the temporary work file now we're done
     let success = removeFile(tmpFile)
     if !success {
-        report("Error -- Could not delete temporary file \(tmpFile) after processing")
+        reportError("Could not delete temporary file \(tmpFile) after processing")
     }
 
     // Remove the source file, if requested
     if doDeleteSource {
         let success = removeFile(inputFile)
         if !success {
-            report("Error -- Could not delete source file \(inputFile) after processing")
+            reportError("Could not delete source file \(inputFile) after processing")
         }
     }
 
@@ -256,7 +282,7 @@ func runSips(_ args: [String]) {
     do {
         try task.run()
     } catch {
-        reportError("Cannot locate sips")
+        reportErrorAndExit("Cannot locate sips")
     }
 
     // Block until the task has completed (short tasks ONLY)
@@ -274,9 +300,9 @@ func runSips(_ args: [String]) {
             }
 
             if outString.count > 0 {
-                print("Error -- sips reported an error: \(outString)")
+                reportError("sips reported an error: \(outString)")
             } else {
-                print("Error -- sips reported error code \(task.terminationStatus) -- task not completed")
+                reportError("sips reported error code \(task.terminationStatus) -- task not completed")
             }
         }
     }
@@ -291,9 +317,17 @@ func report(_ message: String) {
 }
 
 
-func reportError(_ message: String, _ code: Int32 = 1) {
+func reportError(_ message: String) {
 
-    // Generic error display routine
+    // Generic error display routine, but do not exit
+
+    print("Error -- " + message)
+}
+
+
+func reportErrorAndExit(_ message: String, _ code: Int32 = 1) {
+
+    // Generic error display routine, quitting the app after
 
     print("Error -- " + message + " -- exiting")
     exit(code)
@@ -322,14 +356,14 @@ func processColour(_ colourString: String) -> String {
 
     // Check for an out-of-range value
     if workColour.count > 6 {
-        reportError("Invalid hex colour value supplied \(colourString)")
+        reportErrorAndExit("Invalid hex colour value supplied \(colourString)")
     }
 
     // Check it's actually hex (or makes sense as hex)
     let scanner = Scanner.init(string: workColour)
     var dummy: UInt32 = 0
     if !scanner.scanHexInt32(&dummy) {
-        reportError("Invalid hex colour value supplied \(colourString)")
+        reportErrorAndExit("Invalid hex colour value supplied \(colourString)")
     }
 
     // Pre-pad the hex string up to six characters
@@ -363,7 +397,7 @@ func processFormat(_ formatString: String) -> String {
 
     // If we don't have a good format, bail
     if !valid {
-        reportError("Invalid image format selected: \(workFormat)")
+        reportErrorAndExit("Invalid image format selected: \(workFormat)")
     }
 
     // Handle duplicate extensions
@@ -379,7 +413,7 @@ func processFormat(_ formatString: String) -> String {
 
 func showHelp() {
 
-    // Read in app version from info.plist
+    // Display the help screen
 
     showHeader()
 
@@ -389,35 +423,28 @@ func showHelp() {
         formats += (SUPPORTED_TYPES[i].uppercased() + (i < DEDUPE_INDEX - 1 ? ", " : ""))
     }
 
-    print("A macOS image preparation utility\n")
+    print("\nA macOS image preparation utility.\n")
     print("Usage:\n    imageprep [-s path] [-d path] [-c pad_colour]")
     print("              [-a s scale_height scale_width] ")
     print("              [-a p pad_height pad_width]")
     print("              [-a c crop_height crop_width] ")
-    print("              [-r] [-f] [-k] [-o] [-h]\n")
+    print("              [-r] [-f] [-k] [-o] [-h]")
+    print("              [--createdirs] [--version]\n")
     print("    Image formats supported: \(formats).\n")
     print("Options:")
-    print("    -s / --source      [path]                  The path to an image or a directory of images.")
+    print("    -s | --source      [path]                  The path to an image or a directory of images.")
     print("                                               Default: current working directory.")
-    print("    -d / --destination [path]                  The path to the images. Default: source directory.")
-    print("    -a / --action      [type] [width] [height] The crop/pad dimensions. Type is s (scale), c (crop) or p (pad).")
-    print("    -c / --colour      [colour]                The padding colour in Hex, eg. A1B2C3. Default: FFFFFF.")
-    print("    -r / --resolution  [dpi]                   Set the image dpi, eg. 300.")
-    print("    -f / --format      [format]                Set the image format (see above).")
-    print("    -o / --overwrite                           Overwrite an existing file. Without this, existing files will be kept.")
-    print("    -k / --keep                                Keep the source file. Without this, the source will be deleted.")
-    print("    -q / --quiet                               Silence output messages (errors excepted).")
-    print("    -h / --help                                This help screen.\n")
-}
-
-
-func showVersion() {
-
-    // Display the utility's version
-
-    showHeader()
-
-    print("Copyright 2020, Tony Smith (@smittytone). Source code available under the MIT licence.\n")
+    print("    -d | --destination [path]                  The path to the images. Default: source directory.")
+    print("    -a | --action      [type] [width] [height] The crop/pad dimensions. Type is s (scale), c (crop) or p (pad).")
+    print("    -c | --colour      [colour]                The padding colour in Hex, eg. A1B2C3. Default: FFFFFF.")
+    print("    -r | --resolution  [dpi]                   Set the image dpi, eg. 300.")
+    print("    -f | --format      [format]                Set the image format (see above).")
+    print("    -o | --overwrite                           Overwrite an existing file. Without this, existing files will be kept.")
+    print("         --createdirs                          Make target intermediate directories if they do not exist.")
+    print("    -k | --keep                                Keep the source file. Without this, the source will be deleted.")
+    print("    -q | --quiet                               Silence output messages (errors excepted).")
+    print("    -h | --help                                This help screen.")
+    print("         --version                             Version information.\n")
 }
 
 
@@ -427,8 +454,19 @@ func showHeader() {
 
     let version: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String
     let build: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as! String
-    print("\nimageprep \(version) (\(build))")
+    let name:String = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as! String
+    print("\(name) \(version) (\(build))")
 }
+
+
+func showVersion() {
+
+    // Display the utility's version
+
+    showHeader()
+    print("Copyright 2020, Tony Smith (@smittytone).\nSource code available under the MIT licence.")
+}
+
 
 
 // MARK: - Runtime Start
@@ -445,7 +483,7 @@ for argument in CommandLine.arguments {
     if argValue != 0 {
         // Make sure we have a value to read
         if argument.prefix(1) == "-" {
-            reportError("Missing value for \(prevArg)")
+            reportErrorAndExit("Missing value for \(prevArg)")
         }
 
         switch argValue {
@@ -458,7 +496,7 @@ for argument in CommandLine.arguments {
         case 4:
             dpi = Float(argument) ?? 150.0
             if dpi == 0.0 {
-                reportError("Invalid DPI value selected: 0.0")
+                reportErrorAndExit("Invalid DPI value selected: 0.0")
             }
         case 5:
             newFormatForSips = processFormat(argument)
@@ -501,7 +539,7 @@ for argument in CommandLine.arguments {
                 }
             }
         default:
-            reportError("Unknown value: \(argument)")
+            reportErrorAndExit("Unknown value: \(argument)")
         }
 
         if argValue > 5 && argValue < 8 {
@@ -552,6 +590,8 @@ for argument in CommandLine.arguments {
             fallthrough
         case "--overwrite":
             doOverwrite = true
+        case "--createdirs":
+            doMakeSubDirectories = true
         case "-h":
             fallthrough
         case "--help":
@@ -561,7 +601,7 @@ for argument in CommandLine.arguments {
             showVersion()
             exit(0)
         default:
-            reportError("Unknown argument: \(argument)")
+            reportErrorAndExit("Unknown argument: \(argument)")
         }
 
         prevArg = argument
@@ -571,13 +611,13 @@ for argument in CommandLine.arguments {
 
     // Trap commands that come last and therefore have missing args
     if argCount == CommandLine.arguments.count && argValue > 0 {
-        reportError("Missing value for \(argument)")
+        reportErrorAndExit("Missing value for \(argument)")
     }
 }
 
 // Has anything been done?
 if actions.count == 0 && !doReformat && !doChangeResolution {
-    reportError("No actions specified")
+    reportErrorAndExit("No actions specified")
 }
 
 // Get the full source path
@@ -587,7 +627,7 @@ sourcePath = getFullPath(sourcePath)
 // Check whether the source is a directory or a file,
 // and if neither exists, bail
 if !fm.fileExists(atPath: sourcePath, isDirectory: &sourceIsdirectory) {
-    reportError("Source \(sourcePath) cannot be found")
+    reportErrorAndExit("Source \(sourcePath) cannot be found")
 }
 
 // If the source points to a file, get the components
@@ -605,8 +645,12 @@ if !fm.fileExists(atPath: destPath, isDirectory: &destIsdirectory) {
     // Destination is missing but this is valid if the destination is a file,
     // so check its extension before bailing
     if (destPath as NSString).pathExtension.count == 0 {
-        // No file extension, ergo this is a directory, so bail
-        reportError("Destination \(destPath) cannot be found")
+        // No file extension, ergo this is a directory
+        processDirectory(destPath)
+
+        // If we've got this far, we have made the directory, so we need to
+        // correctly set the directory check flag
+        destIsdirectory = true
     }
 }
 
@@ -619,14 +663,14 @@ if !destIsdirectory.boolValue {
     // As a final check, test the path to the file -- we don't make
     // intermediate directories, yet
     if !fm.fileExists(atPath: destPath) {
-        reportError("Destination directory \(destPath) cannot be found")
+        processDirectory(destPath)
     }
 }
 
 // If the source is a directory and the target is a file, that's a mismatch
 // we can't resolve, so warn and bail
 if sourceIsdirectory.boolValue && !destIsdirectory.boolValue {
-    reportError("Source (dirctory) and destination (file) are mismatched")
+    reportErrorAndExit("Source (dirctory) and destination (file) are mismatched")
 }
 
 // Auto-enable 'keep files' if the source and destination are the same
