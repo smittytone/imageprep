@@ -1,6 +1,7 @@
 /*
     imageprep
     main.swift
+
     Copyright © 2020 Tony Smith. All rights reserved.
 
     MIT License
