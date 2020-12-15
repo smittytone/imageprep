@@ -704,7 +704,7 @@ if sourceIsdirectory.boolValue {
             processFile(file)
         }
     } catch {
-        reportErrorAndExit("Could not access source directory '\(sourcePath)'")
+        reportErrorAndExit("Unable to get contents of source directory \(sourcePath)")
     }
 } else {
     // The source file is a single image, so process it
