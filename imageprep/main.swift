@@ -690,12 +690,21 @@ if doShowMessages {
 if sourceIsdirectory.boolValue {
     // Source file is a directory, so enumerate its contents
     // and then process all the files, one by one
+    do {
+        let contents = try fm.contentsOfDirectory(atPath: sourcePath)
 
-    if let fileEnumeration = fm.enumerator(atPath: sourcePath) {
-        fileEnumeration.skipDescendents()
-        for file in fileEnumeration {
-            processFile("\(file)")
+        // If there are no contents, bail
+        if contents.count == 0 {
+            report("Source directory \(sourcePath) is empty")
+            exit(0)
         }
+
+        // Otherwise proceess each item - 'processFile()' determines suitability
+        for file in contents {
+            processFile(file)
+        }
+    } catch {
+        reportErrorAndExit("Could not access source directory '\(sourcePath)'")
     }
 } else {
     // The source file is a single image, so process it
