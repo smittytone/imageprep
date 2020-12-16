@@ -106,6 +106,71 @@ if [[ -z "$result" ]]; then
     fail "0dpi setting not trapped" $test_num
 fi
 
+# TEST -- bad colour value (too long) spotted
+new_test
+result=$("$test_app" -k -s "$image_src" -d test1 --createdirs -c 012345566789)
+
+# Make sure sub-directory NOT created
+check_dir_not_exists test1 $test_num
+
+# Check for error message (invalid colour) in output
+result=$(echo -e "$result" | grep 'Invalid hex colour value supplied')
+if [[ -z "$result" ]]; then
+    fail "Bad colour setting not trapped" $test_num
+fi
+
+# TEST -- bad colour value (not hex) spotted
+new_test
+result=$("$test_app" -k -s "$image_src" -d test1 --createdirs -c gg01aa)
+
+# Make sure sub-directory NOT created
+check_dir_not_exists test1 $test_num
+
+# Check for error message (invalid colour) in output
+result=$(echo -e "$result" | grep 'Invalid hex colour value supplied')
+if [[ -z "$result" ]]; then
+    fail "Bad colour setting not trapped" $test_num
+fi
+
+# TEST -- bad format value spotted
+new_test
+result=$("$test_app" -k -s "$image_src" -d test1 --createdirs -f glob)
+
+# Make sure sub-directory NOT created
+check_dir_not_exists test1 $test_num
+
+# Check for error message (invalid colour) in output
+result=$(echo -e "$result" | grep 'Invalid image format selected')
+if [[ -z "$result" ]]; then
+    fail "Bad colour setting not trapped" $test_num
+fi
+
+# TEST -- bad switch (long) spotted
+new_test
+result=$("$test_app" -k -s "$image_src" -d test1 --createdirs --jump)
+
+# Make sure sub-directory NOT created
+check_dir_not_exists test1 $test_num
+
+# Check for error message (invalid colour) in output
+result=$(echo -e "$result" | grep 'Unknown argument:')
+if [[ -z "$result" ]]; then
+    fail "Bad switch not trapped" $test_num
+fi
+
+# TEST -- bad switch (short) spotted
+new_test
+result=$("$test_app" -k -s "$image_src" -d test1 --createdirs -z)
+
+# Make sure sub-directory NOT created
+check_dir_not_exists test1 $test_num
+
+# Check for error message (invalid colour) in output
+result=$(echo -e "$result" | grep 'Unknown argument:')
+if [[ -z "$result" ]]; then
+    fail "Bad switch not trapped" $test_num
+fi
+
 # TEST -- no actions spotted
 new_test
 result=$("$test_app")
