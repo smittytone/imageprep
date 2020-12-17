@@ -49,6 +49,13 @@ check_file_not_exists() {
     fi
 }
 
+# Check test app exists
+result=$(which "$test_app")
+result=$(echo -e "$result" | grep 'not found')
+if [[ -n "$result" ]]; then
+    fail "Cannot access test file $test_app" "\b"
+fi
+
 # START
 "$test_app" --version
 
@@ -224,7 +231,7 @@ result=$("$test_app" -k -s "../source" -d test8 --createdirs -a s 100 100)
 check_dir_exists test8 $test_num
 
 # Make sure random image is 100px high
-result=$(sips 'test8/BBC Space Themes.jpg' -g pixelHeight -1)
+result=$(sips 'test8/Space Invaded.jpg' -g pixelHeight -1)
 result=$(echo "$result" | cut -d "|" -f2)
 if [[ "$result" != "  pixelHeight: 100" ]]; then
     fail "Scale to 100 x 100 failed" $test_num
@@ -238,7 +245,7 @@ result=$("$test_app" -k -s "../source" -d test9 --createdirs -a s 100 100 -f png
 check_dir_exists test9 $test_num
 
 # Check a random file was converted
-if [[ ! -e 'test9/Doctor Who Genesis of the Daleks.png' ]]; then
+if [[ ! -e 'test9/Fourth Dimension.png' ]]; then
     fail "File not converted to pNG" $test_num
 fi
 
