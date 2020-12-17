@@ -329,6 +329,7 @@ if [[ "$result" != "  pixelHeight: 150" ]]; then
     fail "Scale to 100 x 100 failed" $test_num
 fi
 
+rm oow.jpg
 pass
 
 echo "ALL TESTS PASSED"
