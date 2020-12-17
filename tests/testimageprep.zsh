@@ -129,7 +129,7 @@ result=$("$test_app" -k -s "$image_src" -d test1 --createdirs -c 012345566789)
 check_dir_not_exists test1 $test_num
 
 # Check for error message (invalid colour) in output
-result=$(echo -e "$result" | grep 'Invalid hex colour value supplied')
+result=$(echo -e "$result" | grep 'Error')
 if [[ -z "$result" ]]; then
     fail "Bad colour setting not trapped" $test_num
 fi
@@ -159,7 +159,7 @@ result=$("$test_app" -k -s "$image_src" -d test1 --createdirs -f biff)
 check_dir_not_exists test1 $test_num
 
 # Check for error message (invalid colour) in output
-result=$(echo -e "$result" | grep 'Invalid image format selected')
+result=$(echo -e "$result" | grep 'Error')
 if [[ -z "$result" ]]; then
     fail "Bad format setting not trapped" $test_num
 fi
@@ -174,7 +174,7 @@ result=$("$test_app" -k -s "$image_src" -d test1 --createdirs --jump)
 check_dir_not_exists test1 $test_num
 
 # Check for error message (invalid colour) in output
-result=$(echo -e "$result" | grep 'Unknown argument:')
+result=$(echo -e "$result" | grep 'Error')
 if [[ -z "$result" ]]; then
     fail "Bad switch not trapped" $test_num
 fi
@@ -189,7 +189,7 @@ result=$("$test_app" -k -s "$image_src" -d test1 --createdirs -z)
 check_dir_not_exists test1 $test_num
 
 # Check for error message (invalid colour) in output
-result=$(echo -e "$result" | grep 'Unknown argument:')
+result=$(echo -e "$result" | grep 'Error')
 if [[ -z "$result" ]]; then
     fail "Bad switch not trapped" $test_num
 fi
@@ -201,7 +201,7 @@ new_test
 result=$("$test_app")
 
 # Check for error message (no actions) in output
-result=$(echo -e "$result" | grep 'No actions specified')
+result=$(echo -e "$result" | grep 'Error')
 if [[ -z "$result" ]]; then
     fail "No action args not trapped" $test_num
 fi
@@ -215,7 +215,7 @@ cd test5
 result=$("$test_app" -k -a s 100 100)
 
 # Check for error message (empty dir) in output
-result=$(echo -e "$result" | grep 'is empty')
+result=$(echo -e "$result" | grep 'is empty') # Not an error, but an outcome
 if [[ -z "$result" ]]; then
     fail "Empty directory not trapped" $test_num
 fi
@@ -227,7 +227,7 @@ new_test
 result=$("$test_app" -k -s test6 -a s 100 100)
 
 # Check for error message (dir does not exist) in output
-result=$(echo -e "$result" | grep 'cannot be found')
+result=$(echo -e "$result" | grep 'Error')
 if [[ -z "$result" ]]; then
     fail "Missing source directory not trapped" $test_num
 fi
@@ -242,7 +242,7 @@ result=$("$test_app" -k -s "$image_src" -d test7 -a s 100 100)
 check_dir_not_exists test7 $test_num
 
 # Make sure the missing target was spotted (because not created)
-result=$(echo -e "$result" | grep 'cannot be found')
+result=$(echo -e "$result" | grep 'Error')
 if [[ -z "$result" ]]; then
     fail "Missing target directory not trapped" $test_num
 fi
