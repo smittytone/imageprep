@@ -39,6 +39,7 @@ For more detailed guidance on using *imageprep*, please [see this page](https://
 - 6.1.0 *Unreleased*
     - Add optional destination intermediate directory creation.
     - Ignore sub-directories in the source directory for file-safety reasons.
+    - Correctly keep source file when no target file is named.
     - Minor code improvements.
 - 6.0.0 *2 December 2020*
     - Initial public release.

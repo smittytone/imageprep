@@ -675,7 +675,7 @@ if sourceIsdirectory.boolValue && !destIsdirectory.boolValue {
 }
 
 // Auto-enable 'keep files' if the source and destination are the same
-if sourcePath == destPath && sourceFile == destFile {
+if sourcePath == destPath && (sourceFile == destFile || (sourceFile != "" && destFile == "")) {
     doDeleteSource = false
 }
 
