@@ -34,6 +34,10 @@ let SUPPORTED_TYPES = ["png", "jpeg", "tiff", "pict", "bmp", "gif", "jpg", "tif"
 let DEDUPE_INDEX = 6
 let EMPTY_HEX_BYTES = "000000"
 
+// FROM 6.1.0 -- Use stderr, stdout for output
+let STD_ERR = FileHandle.standardError
+let STD_OUT = FileHandle.standardOutput
+
 
 // MARK: - Global Variables
 
@@ -69,7 +73,6 @@ var doChangeResolution: Bool = false
 var didChangeResolution: Bool = false
 var doShowMessages: Bool = true
 var doDeleteSource: Bool = true
-
 var actions: NSMutableArray = NSMutableArray.init()
 
 // CLI argument management
@@ -314,7 +317,9 @@ func report(_ message: String) {
 
     // Generic message display routine
 
-    if doShowMessages { print(message) }
+    if doShowMessages {
+        writeStderr(message)
+    }
 }
 
 
@@ -322,16 +327,27 @@ func reportError(_ message: String) {
 
     // Generic error display routine, but do not exit
 
-    print("Error -- " + message)
+    writeStderr("Error -- " + message)
 }
 
 
-func reportErrorAndExit(_ message: String, _ code: Int32 = 1) {
+func reportErrorAndExit(_ message: String, _ code: Int32 = EXIT_FAILURE) {
 
     // Generic error display routine, quitting the app after
 
-    print("Error -- " + message + " -- exiting")
+    writeStderr("Error -- " + message + " -- exiting")
     exit(code)
+}
+
+
+func writeStderr(_ message: String) {
+    
+    // FROM 6.1.0
+    // Write errors and other messages to stderr
+    let messageAsString = message + "\r\n"
+    if let messageAsData: Data = messageAsString.data(using: .utf8) {
+        STD_ERR.write(messageAsData)
+    }
 }
 
 
@@ -424,28 +440,39 @@ func showHelp() {
         formats += (SUPPORTED_TYPES[i].uppercased() + (i < DEDUPE_INDEX - 1 ? ", " : ""))
     }
 
-    print("\nA macOS image preparation utility.\n")
-    print("Usage:\n    imageprep [-s path] [-d path] [-c pad_colour]")
-    print("              [-a s scale_height scale_width] ")
-    print("              [-a p pad_height pad_width]")
-    print("              [-a c crop_height crop_width] ")
-    print("              [-r] [-f] [-k] [-o] [-h]")
-    print("              [--createdirs] [--version]\n")
-    print("    Image formats supported: \(formats).\n")
-    print("Options:")
-    print("    -s | --source      {path}                  The path to an image or a directory of images.")
-    print("                                               Default: current working directory.")
-    print("    -d | --destination {path}                  The path to the images. Default: source directory.")
-    print("    -a | --action      {type} {width} {height} The crop/pad dimensions. Type is s (scale), c (crop) or p (pad).")
-    print("    -c | --colour      {colour}                The padding colour in Hex, eg. A1B2C3. Default: FFFFFF.")
-    print("    -r | --resolution  {dpi}                   Set the image dpi, eg. 300.")
-    print("    -f | --format      {format}                Set the image format (see above).")
-    print("    -o | --overwrite                           Overwrite an existing file. Without this, existing files will be kept.")
-    print("         --createdirs                          Make target intermediate directories if they do not exist.")
-    print("    -k | --keep                                Keep the source file. Without this, the source will be deleted.")
-    print("    -q | --quiet                               Silence output messages (errors excepted).")
-    print("    -h | --help                                This help screen.")
-    print("         --version                             Version information.\n")
+    writeStderr("\nA macOS image preparation utility.\r\nhttps://github.com/smittytone/imageprep\n")
+    writeStderr("Usage:\n    imageprep [-s path] [-d path] [-c pad_colour]")
+    writeStderr("              [-a s scale_height scale_width] ")
+    writeStderr("              [-a p pad_height pad_width]")
+    writeStderr("              [-a c crop_height crop_width] ")
+    writeStderr("              [-r] [-f] [-k] [-o] [-h]")
+    writeStderr("              [--createdirs] [--version]\n")
+    writeStderr("    Image formats supported: \(formats).\n")
+    writeStderr("Options:")
+    writeStderr("    -s | --source      {path}                  The path to an image or a directory of images.")
+    writeStderr("                                               Default: current working directory.")
+    writeStderr("    -d | --destination {path}                  The path to the images. Default: source directory.")
+    writeStderr("    -a | --action      {type} {width} {height} The crop/pad dimensions. Type is s (scale), c (crop) or p (pad).")
+    writeStderr("    -c | --colour      {colour}                The padding colour in Hex, eg. A1B2C3. Default: FFFFFF.")
+    writeStderr("    -r | --resolution  {dpi}                   Set the image dpi, eg. 300.")
+    writeStderr("    -f | --format      {format}                Set the image format (see above).")
+    writeStderr("    -o | --overwrite                           Overwrite an existing file. Without this, existing files will be kept.")
+    writeStderr("         --createdirs                          Make target intermediate directories if they do not exist.")
+    writeStderr("    -k | --keep                                Keep the source file. Without this, the source will be deleted.")
+    writeStderr("    -q | --quiet                               Silence output messages (errors excepted).")
+    writeStderr("    -h | --help                                This help screen.")
+    writeStderr("         --version                             Version information.\n")
+    writeStderr("Examples:")
+    writeStderr("    Convert files in the current directory to JPEG and to 300dpi:\n")
+    writeStderr("        imageprep -f jpeg -r 300\n")
+    writeStderr("    Scale files in $SOURCE down to 128 x 128, writing new files to $DEST and keeping the originals:\n")
+    writeStderr("        imageprep -s $SOURCE -d $DEST -a s 128 128 -k\n")
+    writeStderr("    Crop files in $SOURCE to 1000 x 100, writing new files to $DEST, making intermediate")
+    writeStderr("    directories if necessary, and keeping the originals:\n")
+    writeStderr("        imageprep -s $SOURCE -d $DEST --createdirs -a c 1000 1000 -k\n")
+    writeStderr("    Pad files in $SOURCE to 2000 x 2000, padding with magenta pixels, writing new files to $DEST,")
+    writeStderr("    deleting the originals:\n")
+    writeStderr("        imageprep -s $SOURCE -d $DEST -a p 2000 2000 -c ff00ff\n")
 }
 
 
@@ -456,7 +483,7 @@ func showHeader() {
     let version: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String
     let build: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as! String
     let name:String = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as! String
-    print("\(name) \(version) (\(build))")
+    writeStderr("\(name) \(version) (\(build))")
 }
 
 
@@ -465,12 +492,27 @@ func showVersion() {
     // Display the utility's version
 
     showHeader()
-    print("Copyright 2020, Tony Smith (@smittytone).\nSource code available under the MIT licence.")
+    writeStderr("Copyright 2020, Tony Smith (@smittytone).\r\nSource code available under the MIT licence.")
 }
 
 
 
 // MARK: - Runtime Start
+
+// FROM 6.1.0
+// Trap ctrl-c
+signal(SIGINT) {
+    s in let b = String(UnicodeScalar(8))
+    writeStderr("\(b)\(b)\rimageprep interrupted -- halting")
+    exit(EXIT_FAILURE)
+}
+
+// FROM 6.1.0
+// No arguments? Show Help
+if CommandLine.arguments.count == 1 {
+    showHelp()
+    exit(EXIT_SUCCESS)
+}
 
 for argument in CommandLine.arguments {
 
@@ -597,10 +639,10 @@ for argument in CommandLine.arguments {
             fallthrough
         case "--help":
             showHelp()
-            exit(0)
+            exit(EXIT_SUCCESS)
         case "--version":
             showVersion()
-            exit(0)
+            exit(EXIT_SUCCESS)
         default:
             reportErrorAndExit("Unknown argument: \(argument)")
         }
@@ -681,10 +723,10 @@ if sourcePath == destPath && (sourceFile == destFile || (sourceFile != "" && des
 
 // Output the source and destination directories
 if doShowMessages {
-    print("Source: \(sourcePath)/" + (sourceFile.count > 0 ? "\(sourceFile)" : ""))
-    print("Target: \(destPath)/" + (destFile.count > 0 ? "\(destFile)" : ""))
-    if doChangeResolution { print("New DPI: \(dpi)") }
-    if doReformat { print("New image format: \(newFormatForSips)") }
+    writeStderr("Source: \(sourcePath)/" + (sourceFile.count > 0 ? "\(sourceFile)" : ""))
+    writeStderr("Target: \(destPath)/" + (destFile.count > 0 ? "\(destFile)" : ""))
+    if doChangeResolution { writeStderr("New DPI: \(dpi)") }
+    if doReformat { writeStderr("New image format: \(newFormatForSips)") }
 }
 
 // Split the path for a single source file or source directory
@@ -715,11 +757,11 @@ if sourceIsdirectory.boolValue {
 // Present a final task report, if requested
 if doShowMessages {
     if fileCount == 1 {
-        print("1 file converted")
+        writeStderr("1 file converted")
     } else if fileCount > 1 {
-        print("\(fileCount) files converted")
+        writeStderr("\(fileCount) files converted")
     } else {
-        print("No files converted")
+        writeStderr("No files converted")
     }
 }
 
@@ -727,3 +769,6 @@ if doShowMessages {
 if actions.count > 0 {
     actions.removeAllObjects()
 }
+
+// And done...
+exit(EXIT_SUCCESS)

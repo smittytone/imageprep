@@ -65,7 +65,7 @@ fi
 
 # TEST -- scale images, create intermediate directories
 echo -n "Running tests...\nTEST $test_num..."
-result=$("$test_app" -k -s "$image_src" -d test1 --createdirs -a s 100 100)
+result=$("$test_app" -k -s "$image_src" -d test1 --createdirs -a s 100 100 2>&1)
 
 # Make sure sub-directory created
 check_dir_exists test1 $test_num
@@ -83,7 +83,7 @@ pass
 
 # TEST -- crop images, create intermediate directories
 new_test
-result=$("$test_app" -k -s "$image_src" -d test1 --createdirs -a c 200 100)
+result=$("$test_app" -k -s "$image_src" -d test1 --createdirs -a c 200 100 2>&1)
 
 # Make sure sub-directory created
 check_dir_exists test1 $test_num
@@ -108,7 +108,7 @@ pass
 
 # TEST -- bad DPI value spotted
 new_test
-result=$("$test_app" -k -s "$image_src" -d test1 --createdirs -r 0)
+result=$("$test_app" -k -s "$image_src" -d test1 --createdirs -r 0 2>&1)
 
 # Make sure sub-directory NOT created
 check_dir_not_exists test1 $test_num
@@ -123,7 +123,7 @@ pass
 
 # TEST -- bad colour value (too long) spotted
 new_test
-result=$("$test_app" -k -s "$image_src" -d test1 --createdirs -c 012345566789)
+result=$("$test_app" -k -s "$image_src" -d test1 --createdirs -c 012345566789 2>&1)
 
 # Make sure sub-directory NOT created
 check_dir_not_exists test1 $test_num
@@ -138,7 +138,7 @@ pass
 
 # TEST -- bad colour value (not hex) spotted
 new_test
-result=$("$test_app" -k -s "$image_src" -d test1 --createdirs -c gg01aa)
+result=$("$test_app" -k -s "$image_src" -d test1 --createdirs -c gg01aa 2>&1)
 
 # Make sure sub-directory NOT created
 check_dir_not_exists test1 $test_num
@@ -153,7 +153,7 @@ pass
 
 # TEST -- bad format value spotted
 new_test
-result=$("$test_app" -k -s "$image_src" -d test1 --createdirs -f biff)
+result=$("$test_app" -k -s "$image_src" -d test1 --createdirs -f biff 2>&1)
 
 # Make sure sub-directory NOT created
 check_dir_not_exists test1 $test_num
@@ -168,7 +168,7 @@ pass
 
 # TEST -- bad switch (long) spotted
 new_test
-result=$("$test_app" -k -s "$image_src" -d test1 --createdirs --jump)
+result=$("$test_app" -k -s "$image_src" -d test1 --createdirs --jump 2>&1)
 
 # Make sure sub-directory NOT created
 check_dir_not_exists test1 $test_num
@@ -183,7 +183,7 @@ pass
 
 # TEST -- bad switch (short) spotted
 new_test
-result=$("$test_app" -k -s "$image_src" -d test1 --createdirs -z)
+result=$("$test_app" -k -s "$image_src" -d test1 --createdirs -z 2>&1)
 
 # Make sure sub-directory NOT created
 check_dir_not_exists test1 $test_num
@@ -196,23 +196,11 @@ fi
 
 pass
 
-# TEST -- no actions spotted
-new_test
-result=$("$test_app")
-
-# Check for error message (no actions) in output
-result=$(echo -e "$result" | grep 'Error')
-if [[ -z "$result" ]]; then
-    fail "No action args not trapped" $test_num
-fi
-
-pass
-
 # TEST -- no files in source directory spotted
 new_test
 mkdir test5
 cd test5
-result=$("$test_app" -k -a s 100 100)
+result=$("$test_app" -k -a s 100 100 2>&1)
 
 # Check for error message (empty dir) in output
 result=$(echo -e "$result" | grep 'is empty') # Not an error, but an outcome
@@ -224,7 +212,7 @@ pass
 
 # TEST -- missing source directory spotted
 new_test
-result=$("$test_app" -k -s test6 -a s 100 100)
+result=$("$test_app" -k -s test6 -a s 100 100 2>&1)
 
 # Check for error message (dir does not exist) in output
 result=$(echo -e "$result" | grep 'Error')
@@ -236,7 +224,7 @@ pass
 
 # TEST -- missing target directory spotted, no intermediates created
 new_test
-result=$("$test_app" -k -s "$image_src" -d test7 -a s 100 100)
+result=$("$test_app" -k -s "$image_src" -d test7 -a s 100 100 2>&1)
 
 # Make sure sub-directory was not created
 check_dir_not_exists test7 $test_num
@@ -251,7 +239,7 @@ pass
 
 # TEST -- use of a relative path
 new_test
-result=$("$test_app" -k -s "../source" -d test8 --createdirs -a s 100 100)
+result=$("$test_app" -k -s "../source" -d test8 --createdirs -a s 100 100 2>&1)
 
 # Make sure sub-directory created
 check_dir_exists test8 $test_num
@@ -267,7 +255,7 @@ pass
 
 # TEST -- use a relative path, convert jpg -> png, create intermediate dirs, scale images
 new_test
-result=$("$test_app" -k -s "../source" -d test9 --createdirs -a s 100 100 -f png)
+result=$("$test_app" -k -s "../source" -d test9 --createdirs -a s 100 100 -f png 2>&1)
 
 # Make sure sub-directory created
 check_dir_exists test9 $test_num
@@ -292,7 +280,7 @@ pass
 new_test
 mkdir test10
 cp "source/Out of this World.jpg" "test10/oow.jpg"
-result=$("$test_app" -s test10/oow.jpg -d test10a --createdirs -a s 100 100)
+result=$("$test_app" -s test10/oow.jpg -d test10a --createdirs -a s 100 100 2>&1)
 
 # Make sure sub-directory created
 check_dir_exists test10a $test_num
@@ -317,7 +305,7 @@ pass
 # TEST -- source image deleted when it should not be
 new_test
 cp "source/Out of this World.jpg" oow.jpg
-result=$("$test_app" -s oow.jpg -a s 150 150)
+result=$("$test_app" -s oow.jpg -a s 150 150 2>&1)
 
 # Make sure target file created
 check_file_exists oow.jpg $test_num
