@@ -37,6 +37,13 @@ let EMPTY_HEX_BYTES = "000000"
 // FROM 6.1.0 -- Use stderr, stdout for output
 let STD_ERR = FileHandle.standardError
 let STD_OUT = FileHandle.standardOutput
+let STD_IN = FileHandle.standardInput
+
+// FROM 6.1.0 -- TTY formatting
+let RED = "\u{001B}[0;31m"
+let RESET = "\u{001B}[0m"
+let BOLD = "\u{001B}[1m"
+let ITALIC = "\u{001B}[3m"
 
 
 // MARK: - Global Variables
@@ -53,6 +60,7 @@ var doOverwrite: Bool = false
 
 // FROM 6.1.0
 var doMakeSubDirectories: Bool = false
+var isPiped: Bool = false
 
 // Image attributes and action flags
 var padColour: String = "FFFFFF"
@@ -327,7 +335,7 @@ func reportError(_ message: String) {
 
     // Generic error display routine, but do not exit
 
-    writeStderr("Error -- " + message)
+    writeStderr(RED + BOLD + "ERROR" + RESET + " " + message)
 }
 
 
@@ -335,13 +343,13 @@ func reportErrorAndExit(_ message: String, _ code: Int32 = EXIT_FAILURE) {
 
     // Generic error display routine, quitting the app after
 
-    writeStderr("Error -- " + message + " -- exiting")
+    writeStderr(RED + BOLD + "ERROR" + RESET + " " + message + " -- exiting")
     exit(code)
 }
 
 
 func writeStderr(_ message: String) {
-    
+
     // FROM 6.1.0
     // Write errors and other messages to stderr
     let messageAsString = message + "\r\n"
@@ -440,16 +448,16 @@ func showHelp() {
         formats += (SUPPORTED_TYPES[i].uppercased() + (i < DEDUPE_INDEX - 1 ? ", " : ""))
     }
 
-    writeStderr("\nA macOS image preparation utility.\r\nhttps://github.com/smittytone/imageprep\n")
-    writeStderr("Usage:\n    imageprep [-s path] [-d path] [-c pad_colour]")
+    writeStderr("\nA macOS image preparation utility.\r\n" + ITALIC + "https://github.com/smittytone/imageprep\n" + RESET)
+    writeStderr(BOLD + "USAGE" + RESET + "\n    imageprep [-s path] [-d path] [-c pad_colour]")
     writeStderr("              [-a s scale_height scale_width] ")
     writeStderr("              [-a p pad_height pad_width]")
     writeStderr("              [-a c crop_height crop_width] ")
     writeStderr("              [-r] [-f] [-k] [-o] [-h]")
     writeStderr("              [--createdirs] [--version]\n")
     writeStderr("    Image formats supported: \(formats).\n")
-    writeStderr("Options:")
-    writeStderr("    -s | --source      {path}                  The path to an image or a directory of images.")
+    writeStderr(BOLD + "OPTIONS" + RESET)
+    writeStderr("     -s | --source      {path}                  The path to an image or a directory of images.")
     writeStderr("                                               Default: current working directory.")
     writeStderr("    -d | --destination {path}                  The path to the images. Default: source directory.")
     writeStderr("    -a | --action      {type} {width} {height} The crop/pad dimensions. Type is s (scale), c (crop) or p (pad).")
@@ -462,16 +470,14 @@ func showHelp() {
     writeStderr("    -q | --quiet                               Silence output messages (errors excepted).")
     writeStderr("    -h | --help                                This help screen.")
     writeStderr("         --version                             Version information.\n")
-    writeStderr("Examples:")
+    writeStderr(BOLD + "EXAMPLES" + RESET)
     writeStderr("    Convert files in the current directory to JPEG and to 300dpi:\n")
     writeStderr("        imageprep -f jpeg -r 300\n")
-    writeStderr("    Scale files in $SOURCE down to 128 x 128, writing new files to $DEST and keeping the originals:\n")
+    writeStderr("    Scale to 128 x 128, keeping the originals:\n")
     writeStderr("        imageprep -s $SOURCE -d $DEST -a s 128 128 -k\n")
-    writeStderr("    Crop files in $SOURCE to 1000 x 100, writing new files to $DEST, making intermediate")
-    writeStderr("    directories if necessary, and keeping the originals:\n")
+    writeStderr("    Crop files to 1000 x 100, making intermediate directories, keeping originals:\n")
     writeStderr("        imageprep -s $SOURCE -d $DEST --createdirs -a c 1000 1000 -k\n")
-    writeStderr("    Pad files in $SOURCE to 2000 x 2000, padding with magenta pixels, writing new files to $DEST,")
-    writeStderr("    deleting the originals:\n")
+    writeStderr("    Pad to 2000 x 2000 with magenta, deleting the originals:\n")
     writeStderr("        imageprep -s $SOURCE -d $DEST -a p 2000 2000 -c ff00ff\n")
 }
 
@@ -502,19 +508,20 @@ func showVersion() {
 // FROM 6.1.0
 // Trap ctrl-c
 signal(SIGINT) {
-    s in let b = String(UnicodeScalar(8))
+    theSignal in let b = String(UnicodeScalar(8))
     writeStderr("\(b)\(b)\rimageprep interrupted -- halting")
     exit(EXIT_FAILURE)
 }
 
 // FROM 6.1.0
 // No arguments? Show Help
-if CommandLine.arguments.count == 1 {
+var args = CommandLine.arguments
+if args.count == 1 {
     showHelp()
     exit(EXIT_SUCCESS)
 }
 
-for argument in CommandLine.arguments {
+for argument in args {
 
     // Ignore the first comand line argument
     if argCount == 0 {
@@ -640,6 +647,8 @@ for argument in CommandLine.arguments {
         case "--help":
             showHelp()
             exit(EXIT_SUCCESS)
+        case "-V":
+            fallthrough
         case "--version":
             showVersion()
             exit(EXIT_SUCCESS)
