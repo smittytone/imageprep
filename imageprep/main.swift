@@ -646,8 +646,6 @@ for argument in args {
         case "--help":
             showHelp()
             exit(EXIT_SUCCESS)
-        case "-V":
-            fallthrough
         case "--version":
             showVersion()
             exit(EXIT_SUCCESS)
