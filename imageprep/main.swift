@@ -25,7 +25,6 @@
 */
 
 import Foundation
-import Cocoa
 
 
 // MARK: - Constants
@@ -36,7 +35,6 @@ let EMPTY_HEX_BYTES = "000000"
 
 // FROM 6.1.0 -- Use stderr, stdout for output
 let STD_ERR = FileHandle.standardError
-let STD_OUT = FileHandle.standardOutput
 let STD_IN = FileHandle.standardInput
 
 // FROM 6.1.0 -- TTY formatting
@@ -44,6 +42,7 @@ let RED = "\u{001B}[0;31m"
 let RESET = "\u{001B}[0m"
 let BOLD = "\u{001B}[1m"
 let ITALIC = "\u{001B}[3m"
+let BSP = String(UnicodeScalar(8))
 
 
 // MARK: - Global Variables
@@ -352,6 +351,7 @@ func writeStderr(_ message: String) {
 
     // FROM 6.1.0
     // Write errors and other messages to stderr
+
     let messageAsString = message + "\r\n"
     if let messageAsData: Data = messageAsString.data(using: .utf8) {
         STD_ERR.write(messageAsData)
@@ -508,8 +508,7 @@ func showVersion() {
 // FROM 6.1.0
 // Trap ctrl-c
 signal(SIGINT) {
-    theSignal in let b = String(UnicodeScalar(8))
-    writeStderr("\(b)\(b)\rimageprep interrupted -- halting")
+    theSignal in writeStderr("\(BSP)\(BSP)\rimageprep interrupted -- halting")
     exit(EXIT_FAILURE)
 }
 
