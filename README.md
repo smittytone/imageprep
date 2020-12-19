@@ -40,6 +40,7 @@ For more detailed guidance on using *imageprep*, please [see this page](https://
     - Add optional destination intermediate directory creation.
     - Ignore sub-directories in the source directory for file-safety reasons.
     - Colourise output for greater visibility.
+    - Sort source file list before processing.
     - Write all messages to user via `stderr` ([click here to see why](https://clig.dev/#the-basics)).
     - Correctly trap `SIGINT`.
     - Correctly keep source file when no target file is named.

@@ -204,6 +204,7 @@ cd test5
 result=$("$test_app" -k -a s 100 100 2>&1)
 
 # Check for error message (empty dir) in output
+# NOTE use 'No files converted' for .enumerate() ; 'is empty' for .contentsOfDirectory()
 result=$(echo -e "$result" | grep 'is empty') # Not an error, but an outcome
 if [[ -z "$result" ]]; then
     fail "Empty directory not trapped" $test_num
