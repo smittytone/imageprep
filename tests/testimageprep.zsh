@@ -129,9 +129,10 @@ result=$("$test_app" -k -s "$image_src" -d test1 --createdirs -c 012345566789 2>
 check_dir_not_exists test1 $test_num
 
 # Check for error message (invalid colour) in output
-result=$(echo -e "$result" | grep 'Error')
+result=$(echo -e "$result" | grep 'Invalid hex colour value supplied')
 if [[ -z "$result" ]]; then
-    fail "Bad colour setting not trapped" $test_num
+    echo "***"
+    fail "Bad colour setting (too long) not trapped" $test_num
 fi
 
 pass
@@ -146,7 +147,7 @@ check_dir_not_exists test1 $test_num
 # Check for error message (invalid colour) in output
 result=$(echo -e "$result" | grep 'Invalid hex colour value supplied')
 if [[ -z "$result" ]]; then
-    fail "Bad colour setting not trapped" $test_num
+    fail "Bad colour setting (bad hex) not trapped" $test_num
 fi
 
 pass
@@ -159,7 +160,7 @@ result=$("$test_app" -k -s "$image_src" -d test1 --createdirs -f biff 2>&1)
 check_dir_not_exists test1 $test_num
 
 # Check for error message (invalid colour) in output
-result=$(echo -e "$result" | grep 'Error')
+result=$(echo -e "$result" | grep 'image format')
 if [[ -z "$result" ]]; then
     fail "Bad format setting not trapped" $test_num
 fi
@@ -174,7 +175,7 @@ result=$("$test_app" -k -s "$image_src" -d test1 --createdirs --jump 2>&1)
 check_dir_not_exists test1 $test_num
 
 # Check for error message (invalid colour) in output
-result=$(echo -e "$result" | grep 'Error')
+result=$(echo -e "$result" | grep 'Unknown argument')
 if [[ -z "$result" ]]; then
     fail "Bad switch not trapped" $test_num
 fi
@@ -189,7 +190,7 @@ result=$("$test_app" -k -s "$image_src" -d test1 --createdirs -z 2>&1)
 check_dir_not_exists test1 $test_num
 
 # Check for error message (invalid colour) in output
-result=$(echo -e "$result" | grep 'Error')
+result=$(echo -e "$result" | grep 'Unknown argument')
 if [[ -z "$result" ]]; then
     fail "Bad switch not trapped" $test_num
 fi
@@ -215,7 +216,7 @@ new_test
 result=$("$test_app" -k -s test6 -a s 100 100 2>&1)
 
 # Check for error message (dir does not exist) in output
-result=$(echo -e "$result" | grep 'Error')
+result=$(echo -e "$result" | grep 'cannot be found')
 if [[ -z "$result" ]]; then
     fail "Missing source directory not trapped" $test_num
 fi
@@ -225,12 +226,11 @@ pass
 # TEST -- missing target directory spotted, no intermediates created
 new_test
 result=$("$test_app" -k -s "$image_src" -d test7 -a s 100 100 2>&1)
-
 # Make sure sub-directory was not created
 check_dir_not_exists test7 $test_num
 
 # Make sure the missing target was spotted (because not created)
-result=$(echo -e "$result" | grep 'Error')
+result=$(echo -e "$result" | grep 'cannot be found')
 if [[ -z "$result" ]]; then
     fail "Missing target directory not trapped" $test_num
 fi
@@ -318,6 +318,18 @@ if [[ "$result" != "  pixelHeight: 150" ]]; then
 fi
 
 rm oow.jpg
+pass
+
+# TEST -- source and dest are mismatchec
+new_test
+result=$("$test_app" -s "$image_src" -d "test.jpg" --createdirs -a s 150 150 2>&1)
+
+# Make sure the mismatch was spotted
+result=$(echo -e "$result" | grep 'mismatched')
+if [[ -z "$result" ]]; then
+    fail "Mismatched source and destination not trapped" $test_num
+fi
+
 pass
 
 echo "ALL TESTS PASSED"

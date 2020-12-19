@@ -39,9 +39,10 @@ For more detailed guidance on using *imageprep*, please [see this page](https://
 - 6.1.0 *Unreleased*
     - Add optional destination intermediate directory creation.
     - Ignore sub-directories in the source directory for file-safety reasons.
-    - Correctly keep source file when no target file is named.
+    - Colourise output for greater visibility.
     - Write all messages to user via `stderr` ([click here to see why](https://clig.dev/#the-basics)).
     - Correctly trap `SIGINT`.
+    - Correctly keep source file when no target file is named.
     - Add examples to help text.
     - Add test suite.
     - Minor code improvements.
