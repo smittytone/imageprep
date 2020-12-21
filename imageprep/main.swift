@@ -38,7 +38,8 @@ let STD_ERR = FileHandle.standardError
 let STD_IN = FileHandle.standardInput
 
 // FROM 6.1.0 -- TTY formatting
-let RED = "\u{001B}[0;31m"
+let RED = "\u{001B}[31m"
+let YELLOW = "\u{001B}[33m"
 let RESET = "\u{001B}[0m"
 let BOLD = "\u{001B}[1m"
 let ITALIC = "\u{001B}[3m"
@@ -342,7 +343,7 @@ func reportErrorAndExit(_ message: String, _ code: Int32 = EXIT_FAILURE) {
 
     // Generic error display routine, quitting the app after
 
-    writeToStderr(RED + BOLD + "ERROR" + RESET + " " + message + " -- exiting")
+    writeToStderr(RED + BOLD + "ERROR " + RESET + message + " -- exiting")
     exit(code)
 }
 
@@ -457,7 +458,7 @@ func showHelp() {
     writeToStderr("              [--createdirs] [--version]\n")
     writeToStderr("    Image formats supported: \(formats).\n")
     writeToStderr(BOLD + "OPTIONS" + RESET)
-    writeToStderr("     -s | --source      {path}                  The path to an image or a directory of images.")
+    writeToStderr("    -s | --source      {path}                  The path to an image or a directory of images.")
     writeToStderr("                                               Default: current working directory.")
     writeToStderr("    -d | --destination {path}                  The path to the images. Default: source directory.")
     writeToStderr("    -a | --action      {type} {width} {height} The crop/pad dimensions. Type is s (scale), c (crop) or p (pad).")
