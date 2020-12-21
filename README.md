@@ -36,7 +36,7 @@ For more detailed guidance on using *imageprep*, please [see this page](https://
 
 ## Release Notes ##
 
-- 6.1.0 *Unreleased*
+- 6.1.0 *21 December 2020*
     - Add optional destination intermediate directory creation.
     - Ignore sub-directories in the source directory for file-safety reasons.
     - Colourise output for greater visibility.
@@ -46,7 +46,6 @@ For more detailed guidance on using *imageprep*, please [see this page](https://
     - Correctly keep source file when no target file is named.
     - Add examples to help text.
     - Add test suite.
-    - Minor code improvements.
 - 6.0.0 *2 December 2020*
     - Initial public release.
 
