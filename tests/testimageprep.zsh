@@ -7,7 +7,7 @@
 #
 # @author    Tony Smith
 # @copyright 2020, Tony Smith
-# @version   1.0.0
+# @version   1.0.1
 # @license   MIT
 #
 
@@ -331,6 +331,154 @@ if [[ -z "$result" ]]; then
     fail "Mismatched source and destination not trapped" $test_num
 fi
 
+pass
+
+# TEST -- check bad scale width value
+new_test
+test_dir="test$test_num"
+mkdir "$test_dir"
+result=$("$test_app" -s "$image_src" -d "$test_dir" -a s 0 150 -k 2>&1)
+
+# Make sure the mismatch was spotted
+result=$(echo -e "$result" | grep 'Invalid scale width')
+if [[ -z "$result" ]]; then
+    fail "Bad scale width not trapped" $test_num
+fi
+
+pass
+
+# TEST -- check bad scale height value
+new_test
+result=$("$test_app" -s "$image_src" -d "$test_dir" -a s 150 ZZZ -k 2>&1)
+
+# Make sure the mismatch was spotted
+result=$(echo -e "$result" | grep 'Invalid scale height')
+if [[ -z "$result" ]]; then
+    fail "Bad scale width not trapped" $test_num
+fi
+
+pass
+
+# TEST -- check bad crop width value
+new_test
+result=$("$test_app" -s "$image_src" -d "$test_dir" -a c AAA ZZZ -k 2>&1)
+
+# Make sure the mismatch was spotted
+result=$(echo -e "$result" | grep 'Invalid crop width')
+if [[ -z "$result" ]]; then
+    fail "Bad scale width not trapped" $test_num
+fi
+
+pass
+
+# TEST -- check bad crop height value
+new_test
+result=$("$test_app" -s "$image_src" -d "$test_dir" -a c 150 '£' -k 2>&1)
+
+# Make sure the mismatch was spotted
+result=$(echo -e "$result" | grep 'Invalid crop height')
+if [[ -z "$result" ]]; then
+    fail "Bad scale width not trapped" $test_num
+fi
+
+pass
+
+# TEST -- check bad pad width value
+new_test
+result=$("$test_app" -s "$image_src" -d "$test_dir" -a p A B -k 2>&1)
+
+# Make sure the mismatch was spotted
+result=$(echo -e "$result" | grep 'Invalid pad width')
+if [[ -z "$result" ]]; then
+    fail "Bad scale width not trapped" $test_num
+fi
+
+pass
+
+# TEST -- check bad pad height value
+new_test
+result=$("$test_app" -s "$image_src" -d "$test_dir" -a p 1 K -k 2>&1)
+
+# Make sure the mismatch was spotted
+result=$(echo -e "$result" | grep 'Invalid pad height')
+if [[ -z "$result" ]]; then
+    fail "Bad scale width not trapped" $test_num
+fi
+
+rm -rf "$test_dir"
+pass
+
+# TEST -- check absent source file
+new_test
+test_file="zzz.png"
+touch "$test_file"
+result=$("$test_app" -s "$test_file" -a s 100 100 -k 2>&1)
+
+# Make sure the mismatch was spotted
+result=$(echo -e "$result" | grep 'skipping')
+if [[ -z "$result" ]]; then
+    fail "Zero-content file not trapped" $test_num
+fi
+
+rm "$test_file"
+pass
+
+# TEST -- check for bad action
+new_test
+result=$("$test_app" -s "$image_src" -a z 100 100 -k 2>&1)
+
+# Make sure the mismatch was spotted
+result=$(echo -e "$result" | grep 'Invalid action selected')
+if [[ -z "$result" ]]; then
+    fail "Bad action not trapped" $test_num
+fi
+
+pass
+
+# TEST -- check for ignorable action
+new_test
+result=$("$test_app" -s "$image_src" -a s x x -k 2>&1)
+
+# Make sure the mismatch was spotted
+result=$(echo -e "$result" | grep 'No actions specified')
+if [[ -z "$result" ]]; then
+    fail "Ignorable actions not ignored" $test_num
+fi
+
+pass
+
+# TEST -- check for ignorable action
+new_test
+mkdir "test$test_num"
+result=$("$test_app" -s "$image_src" -d "test$test_num" -a s 1000 x -k 2>&1)
+
+# Make sure random image is 1000 x 1500 high
+result1=$(sips "test$test_num/BBC Space Themes.jpg" -g pixelHeight -1)
+result2=$(sips "test$test_num/BBC Space Themes.jpg" -g pixelWidth -1)
+result1=$(echo "$result1" | cut -d "|" -f2)
+result2=$(echo "$result1" | cut -d "|" -f2)
+if [[ "$result1" != "  pixelHeight: 1500" && "$result2" != "  pixelWidth: 1000" ]]; then
+    fail "Scale to to 1000 x image height failed" $test_num
+fi
+
+rm -rf "test$test_num"
+pass
+
+# TEST -- check for ignorable action
+new_test
+mkdir "test$test_num"
+result=$("$test_app" -s "$image_src" -d "test$test_num" -a s x 800 -k 2>&1)
+
+# Make sure random image is 1000 x 1500 high
+result1=$(sips "test$test_num/BBC Space Themes.jpg" -g pixelHeight -1)
+result2=$(sips "test$test_num/BBC Space Themes.jpg" -g pixelWidth -1)
+result1=$(echo "$result1" | cut -d "|" -f2)
+result2=$(echo "$result1" | cut -d "|" -f2)
+if [[ "$result1" != "  pixelHeight: 800" && "$result2" != "  pixelWidth: 1500" ]]; then
+    fail "Scale to image width x 800 failed" $test_num
+fi
+
+rm -rf "test$test_num"
 pass
 
 echo "ALL TESTS PASSED"

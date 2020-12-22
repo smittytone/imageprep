@@ -25,6 +25,7 @@
 */
 
 import Foundation
+import Cocoa
 
 
 // MARK: - Constants
@@ -35,6 +36,7 @@ let EMPTY_HEX_BYTES = "000000"
 
 // FROM 6.1.0 -- Use stderr, stdout for output
 let STD_ERR = FileHandle.standardError
+let STD_OUT = FileHandle.standardOutput
 let STD_IN = FileHandle.standardInput
 
 // FROM 6.1.0 -- TTY formatting
@@ -44,6 +46,13 @@ let RESET = "\u{001B}[0m"
 let BOLD = "\u{001B}[1m"
 let ITALIC = "\u{001B}[3m"
 let BSP = String(UnicodeScalar(8))
+
+// FROM 6.2.0
+let BASE_DPI = 72.0
+let USE_IMAGE = -1
+let SCALE_TO_WIDTH = -2
+let SCALE_TO_HEIGHT = -3
+let ACTION_TYPES = ["c", "s", "p"]
 
 
 // MARK: - Global Variables
@@ -73,15 +82,15 @@ var scaleWidth = padWidth
 var dpi: Float = 150.0
 var newFormatForSips: String = ""
 var formatExtension: String = "png"
-var doCrop: Bool = false
-var doPad: Bool = false
 var doReformat: Bool = false
-var doScale: Bool = false
 var doChangeResolution: Bool = false
 var didChangeResolution: Bool = false
 var doShowMessages: Bool = true
 var doDeleteSource: Bool = true
 var actions: NSMutableArray = NSMutableArray.init()
+
+// FROM 6.2.0
+var justInfo: Bool = false
 
 // CLI argument management
 var argValue: Int = 0
@@ -128,6 +137,36 @@ func getFileSize(_ path: String) -> Int {
 
     let data: Data = fm.contents(atPath: path) ?? Data.init(count: 0)
     return data.count
+}
+
+
+func getImageInfo(_ path: String) -> ImageInfo? {
+
+    // FROM 6.2.0
+    // Load the specified image and gather data from it.
+    // Reurn nil if the file can't be read or contains no data
+
+    // Read the target file in as data and check its length
+    let data: Data = fm.contents(atPath: path) ?? Data.init(count: 0)
+    if data.count == 0 {
+        return nil
+    }
+
+    // Create an ImageInfo instance and populate it using an NSBitmapImageRep
+    // created from the data we just loaded
+    var imageInfo: ImageInfo? = nil
+    if let theImageRep: NSBitmapImageRep = NSBitmapImageRep(data: data) {
+        // Set the instance
+        imageInfo = ImageInfo(theImageRep.pixelsWide, theImageRep.pixelsHigh)
+
+        // Calculate the image DPI
+        let dpi: CGFloat = CGFloat(theImageRep.pixelsWide) * CGFloat(BASE_DPI) / theImageRep.size.width
+        imageInfo!.dpi = dpi
+
+        imageInfo!.hasAlpha = theImageRep.hasAlpha
+    }
+
+    return imageInfo
 }
 
 
@@ -179,9 +218,24 @@ func processFile(_ file: String) {
     // Get the full source image path
     let inputFile = "\(sourcePath)/\(file)"
 
-    // Only proceed if the source image file is non-zero
+    /* Only proceed if the source image file is non-zero
     if getFileSize(inputFile) == 0 {
         report("File \(file) has no content -- skipping")
+        return
+    }
+    */
+
+    // Check the source image by loading it and getting image info
+    let imageInfo: ImageInfo? = getImageInfo(inputFile)
+    if imageInfo == nil {
+        reportWarning("File \(file) has no content -- skipping")
+        return
+    }
+
+    if justInfo {
+        // User just wants file data, so output it and exit
+        let hasAlpha = imageInfo!.hasAlpha ? " alpha" : " no-alpha"
+        writeToStdout("\(inputFile) \(imageInfo!.width) \(imageInfo!.height) \(imageInfo!.dpi)" + hasAlpha)
         return
     }
 
@@ -199,7 +253,7 @@ func processFile(_ file: String) {
                try fm.copyItem(at: URL.init(fileURLWithPath: inputFile),
                                to: URL.init(fileURLWithPath: tmpFile))
             } catch {
-                reportError("Could not write \(outputFile) -- skipping")
+                reportWarning("Could not write \(outputFile) -- skipping")
                 return
             }
         }
@@ -212,11 +266,21 @@ func processFile(_ file: String) {
     if actions.count > 0 {
         for i: Int in 0..<actions.count {
             let action: Action = actions.object(at: i) as! Action
+
+            // FROM 6.2.0 -- set width, height appropriately: first for raw image valiues...
+            var width = action.width == USE_IMAGE ? imageInfo!.width : action.width
+            var height = action.height == USE_IMAGE ? imageInfo!.height : action.height
+
+            // ...then for aspect ratio
+            width = action.width == SCALE_TO_HEIGHT ? Int(CGFloat(action.height) * imageInfo!.aspectRatio) : width
+            height = action.height == SCALE_TO_WIDTH ? Int(CGFloat(action.width) / imageInfo!.aspectRatio) : height
+
+            // Apply the action
             if action.type == "-z" {
                 // Do a separate scale action to avoid losing alpha
-                runSips([tmpFile, action.type, "\(action.height)", "\(action.width)"])
+                runSips([tmpFile, action.type, "\(height)", "\(width)"])
             } else {
-                runSips([tmpFile, action.type, "\(action.height)", "\(action.width)", "--padColor", action.colour])
+                runSips([tmpFile, action.type, "\(height)", "\(width)", "--padColor", action.colour])
             }
         }
     }
@@ -234,7 +298,7 @@ func processFile(_ file: String) {
 
         if fm.fileExists(atPath: newOutputFile) && !doOverwrite {
             // Uh oh! There's already a file there and we have not set the 'do overwrite' flag
-            reportError("target file \(newOutputFile) already exists -- skipping")
+            reportWarning("target file \(newOutputFile) already exists -- skipping")
             return
         }
 
@@ -250,14 +314,14 @@ func processFile(_ file: String) {
     // Remove the temporary work file now we're done
     let success = removeFile(tmpFile)
     if !success {
-        reportError("Could not delete temporary file \(tmpFile) after processing")
+        reportWarning("Could not delete temporary file \(tmpFile) after processing")
     }
 
     // Remove the source file, if requested
     if doDeleteSource {
         let success = removeFile(inputFile)
         if !success {
-            reportError("Could not delete source file \(inputFile) after processing")
+            reportWarning("Could not delete source file \(inputFile) after processing")
         }
     }
 
@@ -331,6 +395,14 @@ func report(_ message: String) {
 }
 
 
+func reportWarning(_ message: String) {
+
+    // Generic warning display routine, but do not exit
+
+    writeToStderr(YELLOW + BOLD + "WARNING" + RESET + " " + message)
+}
+
+
 func reportError(_ message: String) {
 
     // Generic error display routine, but do not exit
@@ -356,6 +428,18 @@ func writeToStderr(_ message: String) {
     let messageAsString = message + "\r\n"
     if let messageAsData: Data = messageAsString.data(using: .utf8) {
         STD_ERR.write(messageAsData)
+    }
+}
+
+
+func writeToStdout(_ message: String) {
+
+    // FROM 6.2.0
+    // Write result data to stdout
+
+    let resultAsString = message + "\r\n"
+    if let resultAsData: Data = resultAsString.data(using: .utf8) {
+        STD_OUT.write(resultAsData)
     }
 }
 
@@ -401,28 +485,18 @@ func processColour(_ colourString: String) -> String {
 }
 
 
-func processFormat(_ formatString: String) -> String {
+func processFormat(_ format: String) -> String {
 
     // Make sure a correct format has been passed, and adjust
     // if for sips use, eg. 'JPG' -> 'jpeg', 'tif' -> 'tiff'
 
-    var workFormat = formatString.lowercased()
-    var valid: Bool = false
-
     // Store the expected format as provided by the user --
     // this is later used to set the target's file extension
-    formatExtension = formatString
-
-    // Check for a valid format
-    for format in SUPPORTED_TYPES {
-        if format == workFormat {
-            valid = true
-            break
-        }
-    }
+    formatExtension = format
+    var workFormat = format.lowercased()
 
     // If we don't have a good format, bail
-    if !valid {
+    if !SUPPORTED_TYPES.contains(workFormat) {
         reportErrorAndExit("Invalid image format selected: \(workFormat)")
     }
 
@@ -434,6 +508,76 @@ func processFormat(_ formatString: String) -> String {
     }
 
     return workFormat
+}
+
+
+func processActionType(_ arg: String) -> String {
+
+    // From 6.2.0
+    // Check we have a valid action type
+
+    let workArg: String = arg.lowercased()
+
+    if !ACTION_TYPES.contains(workArg) {
+        reportErrorAndExit("Invalid action selected: \(arg)")
+    }
+
+    return workArg
+}
+
+
+func processActionValue(_ arg: String, _ action: String, _ isWidth: Bool) -> Int {
+
+    // FROM 6.2.0
+    // Convert an action parameter to an int, or throw
+    // an error if a crop, scale or pad value is bad
+    if arg.lowercased() == "x" {
+        // User wants to retain the image's native value
+        return USE_IMAGE
+    }
+
+    if arg.lowercased() == "m" {
+        // User wants to retain the image's native value
+        return isWidth ? SCALE_TO_HEIGHT : SCALE_TO_WIDTH
+    }
+
+    let value = Int(arg) ?? 0
+    if value < 1 {
+        let theValue: String = isWidth ? "width" : "height"
+        let theAction: String = getActionName(action)
+        reportErrorAndExit("Invalid \(theAction) \(theValue) value")
+    }
+
+    return value
+}
+
+
+func addAction(_ action: String, _ width: Int, _ height: Int) {
+
+    // FROM 6.2.0
+    // Add an action to the list, but make sure it is valid -- ie.
+    // if both height and width are image native, we don't need to do
+    // anything
+
+    if (width == USE_IMAGE && height == USE_IMAGE) || (width == SCALE_TO_HEIGHT && height == SCALE_TO_WIDTH) {
+        let theAction: String = getActionName(action)
+        reportWarning("Action \(theAction) will not change the image -- ignoring")
+        return
+    }
+
+    actions.add(Action.init(action, width, height, padColour))
+}
+
+
+func getActionName(_ action: String) -> String {
+
+    // FROM 6.2.0
+    // Return a human-readable action name
+
+    var theAction: String = "crop"
+    if action == "s" || action == "-z" { theAction = "scale" }
+    if action == "p" || action == "-p"  { theAction = "pad" }
+    return theAction
 }
 
 
@@ -449,25 +593,27 @@ func showHelp() {
         formats += (SUPPORTED_TYPES[i].uppercased() + (i < DEDUPE_INDEX - 1 ? ", " : ""))
     }
 
-    writeToStderr("\nA macOS image preparation utility.\r\n" + ITALIC + "https://github.com/smittytone/imageprep\n" + RESET)
+    writeToStderr("\nA macOS image preparation utility.\r\n" + ITALIC + "https://smittytone.net/imageprep/index.html\n" + RESET)
     writeToStderr(BOLD + "USAGE" + RESET + "\n    imageprep [-s path] [-d path] [-c pad_colour]")
-    writeToStderr("              [-a s scale_height scale_width] ")
-    writeToStderr("              [-a p pad_height pad_width]")
-    writeToStderr("              [-a c crop_height crop_width] ")
-    writeToStderr("              [-r] [-f] [-k] [-o] [-h]")
-    writeToStderr("              [--createdirs] [--version]\n")
+    writeToStderr("              [-a s scale_height scale_width] [-a p pad_height pad_width]")
+    writeToStderr("              [-a c crop_height crop_width] [-r] [-f] [-k] [-o] [-i]")
+    writeToStderr("              [-h] [--createdirs] [--version]\n")
     writeToStderr("    Image formats supported: \(formats).\n")
     writeToStderr(BOLD + "OPTIONS" + RESET)
     writeToStderr("    -s | --source      {path}                  The path to an image or a directory of images.")
     writeToStderr("                                               Default: current working directory.")
     writeToStderr("    -d | --destination {path}                  The path to the images. Default: source directory.")
     writeToStderr("    -a | --action      {type} {width} {height} The crop/pad dimensions. Type is s (scale), c (crop) or p (pad).")
+    writeToStderr("                                               Provide absolute integer values for width or height, or")
+    writeToStderr("                                               x to use the image's existing dimension, or m to maintain")
+    writeToStderr("                                               the source image's aspect ratio")
     writeToStderr("    -c | --colour      {colour}                The padding colour in Hex, eg. A1B2C3. Default: FFFFFF.")
     writeToStderr("    -r | --resolution  {dpi}                   Set the image dpi, eg. 300.")
     writeToStderr("    -f | --format      {format}                Set the image format (see above).")
     writeToStderr("    -o | --overwrite                           Overwrite an existing file. Without this, existing files will be kept.")
     writeToStderr("         --createdirs                          Make target intermediate directories if they do not exist.")
     writeToStderr("    -k | --keep                                Keep the source file. Without this, the source will be deleted.")
+    writeToStderr("    -i | --info                                Export basic image info: path, height, width, dpi and alpha.")
     writeToStderr("    -q | --quiet                               Silence output messages (errors excepted).")
     writeToStderr("    -h | --help                                This help screen.")
     writeToStderr("         --version                             Version information.\n")
@@ -476,8 +622,12 @@ func showHelp() {
     writeToStderr("        imageprep -f jpeg -r 300\n")
     writeToStderr("    Scale to 128 x 128, keeping the originals:\n")
     writeToStderr("        imageprep -s $SOURCE -d $DEST -a s 128 128 -k\n")
+    writeToStderr("    Scale to height of 1024, width in aspect, keeping the originals:\n")
+    writeToStderr("        imageprep -s $SOURCE -d $DEST -a s m 1024 -k\n")
     writeToStderr("    Crop files to 1000 x 100, making intermediate directories, keeping originals:\n")
     writeToStderr("        imageprep -s $SOURCE -d $DEST --createdirs -a c 1000 1000 -k\n")
+    writeToStderr("    Crop files to 1000 x source image height, keeping originals:\n")
+    writeToStderr("        imageprep -s $SOURCE -d $DEST -a c 1000 x -k\n")
     writeToStderr("    Pad to 2000 x 2000 with magenta, deleting the originals:\n")
     writeToStderr("        imageprep -s $SOURCE -d $DEST -a p 2000 2000 -c ff00ff\n")
 }
@@ -551,42 +701,27 @@ for argument in args {
         case 5:
             newFormatForSips = processFormat(argument)
         case 6:
-            actionType = argument
+            actionType = processActionType(argument)
         case 7:
             // Set widths based on action and set the action flag if the value is good
             if actionType == "c" {
-                cropWidth = Int(argument) ?? 0
-                if cropWidth > 0 { doCrop = true }
+                cropWidth = processActionValue(argument, actionType, true)
             } else if actionType == "s" {
-                scaleWidth = Int(argument) ?? 0
-                if scaleWidth > 0 { doScale = true }
+                scaleWidth = processActionValue(argument, actionType, true)
             } else {
-                padWidth = Int(argument) ?? 0
-                if padWidth > 0 { doPad = true }
+                padWidth = processActionValue(argument, actionType, true)
             }
         case 8:
             // Set heights based on action, but clear the action flag if the value is bad
             if actionType == "c" {
-                cropHeight = Int(argument) ?? 0
-                if cropHeight > 0 {
-                    actions.add(Action.init("-c", cropWidth, cropHeight, padColour))
-                } else {
-                    doCrop = false
-                }
+                cropHeight = processActionValue(argument, actionType, false)
+                addAction("-c", cropWidth, cropHeight)
             } else if actionType == "s" {
-                scaleHeight = Int(argument) ?? 0
-                if scaleHeight > 0 {
-                    actions.add(Action.init("-z", scaleWidth, scaleHeight, padColour))
-                } else {
-                    doScale = false
-                }
+                scaleHeight = processActionValue(argument, actionType, false)
+                addAction("-z", scaleWidth, scaleHeight)
             } else {
-                padHeight = Int(argument) ?? 0
-                if padHeight > 0 {
-                    actions.add(Action.init("-p", padWidth, padHeight, padColour))
-                } else {
-                    doPad = false
-                }
+                padHeight = processActionValue(argument, actionType, false)
+                addAction("-p", padWidth, padHeight)
             }
         default:
             reportErrorAndExit("Unknown value: \(argument)")
@@ -642,6 +777,10 @@ for argument in args {
             doOverwrite = true
         case "--createdirs":
             doMakeSubDirectories = true
+        case "-i":
+            fallthrough
+        case "--info":
+            justInfo = true
         case "-h":
             fallthrough
         case "--help":
@@ -666,7 +805,7 @@ for argument in args {
 }
 
 // Has anything been done?
-if actions.count == 0 && !doReformat && !doChangeResolution {
+if actions.count == 0 && !doReformat && !doChangeResolution && !justInfo {
     reportErrorAndExit("No actions specified")
 }
 

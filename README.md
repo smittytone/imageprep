@@ -1,4 +1,4 @@
-# imageprep 6.1.0 #
+# imageprep 6.2.0 #
 
 *imageprep* is an image preparation utility for macOS. It is essentially a wrapper for *sips*.
 
@@ -9,8 +9,8 @@ imageprep [-s path] [-d path] [-c pad_colour] \
           [-a s scale_height scale_width] \
           [-a p pad_height pad_width] \
           [-a c crop_height crop_width] \
-          [-r] [-f] [-k] [-o] [-h] \
-          [ --version ] [ --createdirs ]
+          [-r] [-f] [-k] [-o] [-i] \
+          [-h] [--version] [--createdirs]
 ```
 
 For more detailed guidance on using *imageprep*, please [see this page](https://smittytone.net/imageprep/).
@@ -27,6 +27,7 @@ For more detailed guidance on using *imageprep*, please [see this page](https://
 | `-f` | `--format` | `{format}` | Set the image format: JPG/JPEG, PNG, GIF, BMP or TIF/TIFF |
 |      | `--createdirs` |  | Create intermediate directories to the destination, if needed. Default: do not create |
 | `-o` | `--overwrite` |  | Overwrite an existing file. Without this, existing files will be kept |
+| `-i` | `--info` |  | Output image information in machine-readable form: path, width, height, resolution and alpha state |
 | `-k` | `--keep` |  | Keep the source file. Without this, the source will be deleted |
 | `-q` | `--quiet` |  | Silence output messages (errors excepted) |
 | `-h` | `--help` |  | Show help information |
@@ -36,6 +37,11 @@ For more detailed guidance on using *imageprep*, please [see this page](https://
 
 ## Release Notes ##
 
+- 6.2.0 *Unreleased*
+    - Add `-i`/`--info` argument.
+    - Add the ability to crop/scale/pad to the width or height of the source image.
+    - Add the ability to crop/scale/pad to a specified width or height using the aspect ratio of the source image.
+    - Refactor code.
 - 6.1.0 *21 December 2020*
     - Add optional destination intermediate directory creation.
     - Ignore sub-directories in the source directory for file-safety reasons.

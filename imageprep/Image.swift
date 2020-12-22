@@ -36,14 +36,31 @@ import Foundation
  */
 final class ImageInfo {
 
-    var width: Int = -1
-    var height: Int = -1
+    var width: Int {
+        didSet {
+            setAspectRatio()
+        }
+    }
+
+    var height: Int {
+        didSet {
+            setAspectRatio()
+        }
+    }
+
     var dpi: CGFloat = -1
     var hasAlpha: Bool = false
+    var aspectRatio: CGFloat = 1.0
 
     init(_ width: Int = -1, _ height: Int = -1) {
         self.width = width
         self.height = height
     }
 
+    private func setAspectRatio() {
+
+        if self.height != -1 && self.width != -1 {
+            aspectRatio = CGFloat(width) / CGFloat(width)
+        }
+    }
 }
