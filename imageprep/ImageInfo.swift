@@ -24,6 +24,7 @@
     SOFTWARE.
 */
 import Foundation
+import Cocoa
 
 
 /*
@@ -36,31 +37,36 @@ import Foundation
  */
 final class ImageInfo {
 
-    var width: Int {
-        didSet {
-            setAspectRatio()
-        }
-    }
+    // MARK: - Constants
+    let BASE_DPI = 72.0
 
-    var height: Int {
-        didSet {
-            setAspectRatio()
-        }
-    }
-
+    
+    // MARK: - Properties
+    var width: Int = -1
+    var height: Int = -1
     var dpi: CGFloat = -1
     var hasAlpha: Bool = false
     var aspectRatio: CGFloat = 1.0
 
-    init(_ width: Int = -1, _ height: Int = -1) {
-        self.width = width
-        self.height = height
+
+    // MARK: - Lifecycle Functions
+    init(_ data: Data) {
+        if let theImageRep: NSBitmapImageRep = NSBitmapImageRep(data: data) {
+            // Set the instance
+            self.width = theImageRep.pixelsWide
+            self.height = theImageRep.pixelsHigh
+            calculateAspectRatio()
+
+            // Calculate the image DPI
+            self.dpi = CGFloat(theImageRep.pixelsWide) * CGFloat(BASE_DPI) / theImageRep.size.width
+            self.hasAlpha = theImageRep.hasAlpha
+        }
     }
 
-    private func setAspectRatio() {
 
-        if self.height != -1 && self.width != -1 {
-            aspectRatio = CGFloat(width) / CGFloat(width)
-        }
+    // MARK: - Misc Functions
+    private func calculateAspectRatio() {
+
+        self.aspectRatio = CGFloat(self.width) / CGFloat(self.height)
     }
 }
