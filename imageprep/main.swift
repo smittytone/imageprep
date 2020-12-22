@@ -154,18 +154,7 @@ func getImageInfo(_ path: String) -> ImageInfo? {
 
     // Create an ImageInfo instance and populate it using an NSBitmapImageRep
     // created from the data we just loaded
-    var imageInfo: ImageInfo? = nil
-    if let theImageRep: NSBitmapImageRep = NSBitmapImageRep(data: data) {
-        // Set the instance
-        imageInfo = ImageInfo(theImageRep.pixelsWide, theImageRep.pixelsHigh)
-
-        // Calculate the image DPI
-        let dpi: CGFloat = CGFloat(theImageRep.pixelsWide) * CGFloat(BASE_DPI) / theImageRep.size.width
-        imageInfo!.dpi = dpi
-
-        imageInfo!.hasAlpha = theImageRep.hasAlpha
-    }
-
+    let imageInfo: ImageInfo = ImageInfo(data)
     return imageInfo
 }
 
@@ -234,8 +223,8 @@ func processFile(_ file: String) {
 
     if justInfo {
         // User just wants file data, so output it and exit
-        let hasAlpha = imageInfo!.hasAlpha ? " alpha" : " no-alpha"
-        writeToStdout("\(inputFile) \(imageInfo!.width) \(imageInfo!.height) \(imageInfo!.dpi)" + hasAlpha)
+        let hasAlpha = imageInfo!.hasAlpha ? "alpha" : "no-alpha"
+        writeToStdout("\(inputFile) \(imageInfo!.width) \(imageInfo!.height) \(imageInfo!.dpi) \(imageInfo!.aspectRatio) " + hasAlpha)
         return
     }
 
