@@ -1,6 +1,6 @@
 /*
     imageprep
-    action.swift
+    image.swift
 
     Copyright © 2020 Tony Smith. All rights reserved.
 
@@ -27,33 +27,23 @@ import Foundation
 
 
 /*
-    A simple class to hold image processing actions.
-    These will be held in an array by the main program.
+    A simple class to hold image information:
 
-    'type' -- the action to be performed:
-              -c -- crop
-              -p -- pad
-              -z -- scale
     'width' -- the width of the image after the action
     'height' -- the height of the image after the action
-    'colour' -- the current pad colour (ignored on scale actions)
+    'dpi' -- the resolution of the image
+    'hasAlpha' -- whether the image has an alpha channel
  */
-final class Action {
+final class ImageInfo {
 
-    var type: String = ""
     var width: Int = -1
     var height: Int = -1
-    var colour: String = "FFFFFF"
+    var dpi: CGFloat = -1
+    var hasAlpha: Bool = false
 
-    init(_ type: String = "",
-         _ width: Int = -1,
-         _ height: Int = -1,
-         _ colour: String = "FFFFFF") {
-        
-        self.type = type
+    init(_ width: Int = -1, _ height: Int = -1) {
         self.width = width
         self.height = height
-        self.colour = colour
     }
-    
+
 }
