@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		3B20081D2591F2D200446505 /* Image.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B20081C2591F2D200446505 /* Image.swift */; };
+		3B20081D2591F2D200446505 /* ImageInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B20081C2591F2D200446505 /* ImageInfo.swift */; };
 		3B283B96256EACCF002B999D /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B283B95256EACCF002B999D /* main.swift */; };
 		3BF352A325756308009F8D72 /* Action.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BF352A225756308009F8D72 /* Action.swift */; };
 /* End PBXBuildFile section */
@@ -25,7 +25,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		3B20081C2591F2D200446505 /* Image.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Image.swift; sourceTree = "<group>"; };
+		3B20081C2591F2D200446505 /* ImageInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageInfo.swift; sourceTree = "<group>"; };
 		3B283B92256EACCF002B999D /* imageprep */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = imageprep; sourceTree = BUILT_PRODUCTS_DIR; };
 		3B283B95256EACCF002B999D /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		3B283B9D256EAD4E002B999D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -64,7 +64,7 @@
 			children = (
 				3B283B95256EACCF002B999D /* main.swift */,
 				3BF352A225756308009F8D72 /* Action.swift */,
-				3B20081C2591F2D200446505 /* Image.swift */,
+				3B20081C2591F2D200446505 /* ImageInfo.swift */,
 				3B283B9D256EAD4E002B999D /* Info.plist */,
 			);
 			path = imageprep;
@@ -128,7 +128,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3B283B96256EACCF002B999D /* main.swift in Sources */,
-				3B20081D2591F2D200446505 /* Image.swift in Sources */,
+				3B20081D2591F2D200446505 /* ImageInfo.swift in Sources */,
 				3BF352A325756308009F8D72 /* Action.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -257,7 +257,7 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
-				CURRENT_PROJECT_VERSION = 89;
+				CURRENT_PROJECT_VERSION = 91;
 				DEVELOPMENT_TEAM = Y5J3K52DNA;
 				DSTROOT = $SRCROOT/build/pkgroot;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -278,7 +278,7 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
-				CURRENT_PROJECT_VERSION = 89;
+				CURRENT_PROJECT_VERSION = 91;
 				DEVELOPMENT_TEAM = Y5J3K52DNA;
 				DSTROOT = $SRCROOT/build/pkgroot;
 				ENABLE_HARDENED_RUNTIME = YES;
