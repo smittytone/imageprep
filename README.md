@@ -5,12 +5,14 @@
 ## Usage
 
 ```
-imageprep [-s path] [-d path] [-c pad_colour] \
-          [-a s scale_height scale_width] \
-          [-a p pad_height pad_width] \
-          [-a c crop_height crop_width] \
-          [-r] [-f] [-k] [-o] [-i] \
-          [-h] [--version] [--createdirs]
+imageprep [--source path] [--destination path] \
+          [--action s scale_height scale_width] \
+          [--action p pad_height pad_width] \
+          [--action c crop_height crop_width] \
+          [--cropfrom anchor_point] [--colour pad_colour] \
+          [--resolution dpi_value] [--format format_type] \
+          [--keep] [--overwrite] [--info] [--createdirs] \
+          [--help] [--version]
 ```
 
 For more detailed guidance on using *imageprep*, please [see this page](https://smittytone.net/imageprep/).
@@ -23,22 +25,40 @@ For more detailed guidance on using *imageprep*, please [see this page](https://
 | `-d` | `--destination` | `{path}` | The path to the images. Default: source directory |
 | `-a` | `--action` | `{type}`&nbsp;`{width}`&nbsp;`{height}` | The crop/pad dimensions. Type is s (scale), c (crop) or p (pad), eg. `-a s 200 200` |
 | `-c` | `--colour` | `{colour}` | The padding colour in Hex, eg. `A1B2C3`. Numbers may be prefixed `#`, `$` or `0x`, or habve no prefix. Default: `FFFFFF` |
+|      | `--cropfrom` | `{anchor point}` | Set an anchor point for crop actions. See [**Anchor Points**](#anchor-points) below |
 | `-r` | `--resolution` | `{dpi}` | Set the image dpi, eg. 300 |
 | `-f` | `--format` | `{format}` | Set the image format: JPG/JPEG, PNG, GIF, BMP or TIF/TIFF |
 |      | `--createdirs` |  | Create intermediate directories to the destination, if needed. Default: do not create |
 | `-o` | `--overwrite` |  | Overwrite an existing file. Without this, existing files will be kept |
-| `-i` | `--info` |  | Output image information in machine-readable form: path, width, height, resolution and alpha state |
+|      | `--info` |  | Output image information in machine-readable form: path, width, height, resolution and alpha state |
 | `-k` | `--keep` |  | Keep the source file. Without this, the source will be deleted |
 | `-q` | `--quiet` |  | Silence output messages (errors excepted) |
 | `-h` | `--help` |  | Show help information |
 |      | `--version` |  | Show version information |
 
-**Note** You can select either crop, pad or scale or all three, but actions will always be performed in this order: crop, pad, then scale.
+You can add any number of actions: they will be applied in the order they appear at the command line.
+
+### Anchor Points ###
+
+From version 6.2.0, you can specify an anchor point for crop operations. Use the `--cropfrom` switch and a value to indicate the anchor point: text markers, eg. `tr` for top-right, `bl` for bottom-left or `cr` for centre-right, etc., or a numerical value:
+
+| &nbsp; | Left | Centre | Right |
+| :-: | :-: | :-: | :-: |
+| **Top** | `TL` | `TC` | `TR` |
+| **Centre** | `CL` | N/A | `CR` |
+| **Bottom** | `BL` | `BC` | `BR` |
+
+| &nbsp; | Left | Centre | Right |
+| :-: | :-: | :-: | :-: |
+| **Top** | `0` | `1` | `2` |
+| **Centre** | `3` | N/A | `5` |
+| **Bottom** | `6` | `7` | `8` |
 
 ## Release Notes ##
 
 - 6.2.0 *Unreleased*
-    - Add `-i`/`--info` argument.
+    - Add `--cropfrom` flag to select a crop anchor point.
+    - Add `--info` argument.
     - Add the ability to crop/scale/pad to the width or height of the source image.
     - Add the ability to crop/scale/pad to a specified width or height using the aspect ratio of the source image.
     - Refactor code.

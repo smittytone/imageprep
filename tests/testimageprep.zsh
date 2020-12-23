@@ -483,19 +483,46 @@ pass
 
 # TEST -- check for scale with aspect-ratio set image value (width)
 new_test
-mkdir "test$test_num"
-result=$("$test_app" -s "$image_src" -d "test$test_num" -a s 130 m -k 2>&1)
+result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a s 130 m -k 2>&1)
 
 # Make sure random image is 130 x 160 high
-result1=$(sips "test$test_num/BBC Space Themes.jpg" -g pixelHeight -1)
-result2=$(sips "test$test_num/BBC Space Themes.jpg" -g pixelWidth -1)
+result1=$(sips 2000AD_0086_24.jpg -g pixelHeight -1)
+result2=$(sips 2000AD_0086_24.jpg -g pixelWidth -1)
 result1=$(echo "$result1" | cut -d "|" -f2)
 result2=$(echo "$result1" | cut -d "|" -f2)
 if [[ "$result1" != "  pixelHeight: 160" && "$result2" != "  pixelWidth: 130" ]]; then
     fail "Scale to 130 by aspect ratio failed" $test_num
 fi
 
-rm -rf "test$test_num"
+rm 2000AD_0086_24.jpg
 pass
+
+# TEST -- check for unknown crop fix point
+new_test
+result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a c 130 m --cropfrom gg -k 2>&1)
+
+# Make sure the mismatch was spotted
+result=$(echo -e "$result" | grep 'Invalid crop anchor')
+if [[ -z "$result" ]]; then
+    fail "Bad crop point not trapped" $test_num
+fi
+
+pass
+
+# TEST -- check for crop to bottom left
+new_test
+result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a c 650 800 --cropfrom br -k 2>&1)
+
+# Make sure random image is 130 x 160 high
+result1=$(sips 2000AD_0086_24.jpg -g pixelHeight -1)
+result2=$(sips 2000AD_0086_24.jpg -g pixelWidth -1)
+result1=$(echo "$result1" | cut -d "|" -f2)
+result2=$(echo "$result1" | cut -d "|" -f2)
+if [[ "$result1" != "  pixelHeight: 800" && "$result2" != "  pixelWidth: 650" ]]; then
+    fail "Crop to 650 x 800 failed" $test_num
+fi
+
+pass
+echo -e "NOTE -- Manually verify 2000AD_0086_24.jpg is a bottom-right crop\n"
 
 echo "ALL TESTS PASSED"
