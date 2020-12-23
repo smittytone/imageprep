@@ -260,7 +260,7 @@ func processFile(_ file: String) {
             width = action.width == SCALE_TO_HEIGHT ? Int(CGFloat(action.height) * imageInfo!.aspectRatio) : width
             height = action.height == SCALE_TO_WIDTH ? Int(CGFloat(action.width) / imageInfo!.aspectRatio) : height
 
-            // Apply the action
+            // Set up sips' arguments
             var sipsArgs: [String] = [tmpFile, action.type, "\(height)", "\(width)"]
 
             if action.type != "-z" {
@@ -300,7 +300,7 @@ func processFile(_ file: String) {
                 sipsArgs.append(contentsOf: ["--padColor", action.colour])
             }
 
-            print("\(sipsArgs)")
+            // Apply the action
             runSips(sipsArgs)
         }
     }
