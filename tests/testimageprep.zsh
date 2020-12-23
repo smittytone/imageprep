@@ -321,7 +321,7 @@ fi
 rm oow.jpg
 pass
 
-# TEST -- source and dest are mismatchec
+# TEST -- source and dest are mismatched
 new_test
 result=$("$test_app" -s "$image_src" -d "test.jpg" --createdirs -a s 150 150 2>&1)
 
@@ -447,7 +447,7 @@ fi
 
 pass
 
-# TEST -- check for ignorable action
+# TEST -- check for scale with raw image value (height)
 new_test
 mkdir "test$test_num"
 result=$("$test_app" -s "$image_src" -d "test$test_num" -a s 1000 x -k 2>&1)
@@ -458,13 +458,13 @@ result2=$(sips "test$test_num/BBC Space Themes.jpg" -g pixelWidth -1)
 result1=$(echo "$result1" | cut -d "|" -f2)
 result2=$(echo "$result1" | cut -d "|" -f2)
 if [[ "$result1" != "  pixelHeight: 1500" && "$result2" != "  pixelWidth: 1000" ]]; then
-    fail "Scale to to 1000 x image height failed" $test_num
+    fail "Scale to 1000 x image height failed" $test_num
 fi
 
 rm -rf "test$test_num"
 pass
 
-# TEST -- check for ignorable action
+# TEST -- check for scale with raw image value (width)
 new_test
 mkdir "test$test_num"
 result=$("$test_app" -s "$image_src" -d "test$test_num" -a s x 800 -k 2>&1)
@@ -476,6 +476,23 @@ result1=$(echo "$result1" | cut -d "|" -f2)
 result2=$(echo "$result1" | cut -d "|" -f2)
 if [[ "$result1" != "  pixelHeight: 800" && "$result2" != "  pixelWidth: 1500" ]]; then
     fail "Scale to image width x 800 failed" $test_num
+fi
+
+rm -rf "test$test_num"
+pass
+
+# TEST -- check for scale with aspect-ratio set image value (width)
+new_test
+mkdir "test$test_num"
+result=$("$test_app" -s "$image_src" -d "test$test_num" -a s 130 m -k 2>&1)
+
+# Make sure random image is 130 x 160 high
+result1=$(sips "test$test_num/BBC Space Themes.jpg" -g pixelHeight -1)
+result2=$(sips "test$test_num/BBC Space Themes.jpg" -g pixelWidth -1)
+result1=$(echo "$result1" | cut -d "|" -f2)
+result2=$(echo "$result1" | cut -d "|" -f2)
+if [[ "$result1" != "  pixelHeight: 160" && "$result2" != "  pixelWidth: 130" ]]; then
+    fail "Scale to 130 by aspect ratio failed" $test_num
 fi
 
 rm -rf "test$test_num"
