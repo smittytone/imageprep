@@ -131,21 +131,11 @@ func processRelativePath(_ relativePath: String) -> String {
 }
 
 
-func getFileSize(_ path: String) -> Int {
-
-    // Report the size of the file at the specified absolute path.
-    // Default to 0 for a missing file
-
-    let data: Data = fm.contents(atPath: path) ?? Data.init(count: 0)
-    return data.count
-}
-
-
 func getImageInfo(_ path: String) -> ImageInfo? {
 
     // FROM 6.2.0
     // Load the specified image and gather data from it.
-    // Reurn nil if the file can't be read or contains no data
+    // Return nil if the file can't be read or contains no data
 
     // Read the target file in as data and check its length
     let data: Data = fm.contents(atPath: path) ?? Data.init(count: 0)
@@ -155,8 +145,7 @@ func getImageInfo(_ path: String) -> ImageInfo? {
 
     // Create an ImageInfo instance and populate it using an NSBitmapImageRep
     // created from the data we just loaded
-    let imageInfo: ImageInfo = ImageInfo(data)
-    return imageInfo
+    return ImageInfo(data)
 }
 
 
@@ -172,7 +161,6 @@ func processDirectory(_ path: String) {
             try fm.createDirectory(at: URL.init(fileURLWithPath: path),
                                    withIntermediateDirectories: true,
                                    attributes: nil)
-
         } catch {
             reportErrorAndExit("Destination \(path) does not exist and cannot be created")
         }
@@ -274,7 +262,7 @@ func processFile(_ file: String) {
                     }
 
                     if cropFix == 3 || cropFix == 5 {
-                        yOffset = yOffset / 2
+                        yOffset = yOffset >> 1
                     }
 
                     if cropFix % 3 != 0 {
@@ -282,7 +270,7 @@ func processFile(_ file: String) {
                     }
 
                     if cropFix == 1 || cropFix == 7 {
-                        xOffset = xOffset / 2
+                        xOffset = xOffset >> 1
                     }
 
                     // QUIRKS
@@ -357,7 +345,12 @@ func removeFile(_ path: String) -> Bool {
 
     // Generic file remover called from 'processFile()'
 
-    do { try fm.removeItem(at: URL.init(fileURLWithPath: path)) } catch { return false }
+    do {
+        try fm.removeItem(at: URL.init(fileURLWithPath: path))
+    } catch {
+        return false
+    }
+    
     return true
 }
 
@@ -383,16 +376,15 @@ func runSips(_ args: [String]) {
 
     // Block until the task has completed (short tasks ONLY)
     task.waitUntilExit()
-
+    
+    // Look for and deal with execution issues
     if !task.isRunning {
         if (task.terminationStatus != 0) {
             // Command failed -- collect the output if there is any
             let outputHandle = outputPipe.fileHandleForReading
             var outString: String = ""
             if outputHandle.availableData.count > 0 {
-                if let line = String(data: outputHandle.availableData, encoding: String.Encoding.utf8) {
-                    outString = line
-                }
+                outString = String(data: outputHandle.availableData, encoding: String.Encoding.utf8) ?? ""
             }
 
             if outString.count > 0 {
@@ -417,6 +409,7 @@ func report(_ message: String) {
 
 func reportWarning(_ message: String) {
 
+    // FROM 6.2.0
     // Generic warning display routine, but do not exit
 
     writeToStderr(YELLOW + BOLD + "WARNING" + RESET + " " + message)
@@ -445,10 +438,7 @@ func writeToStderr(_ message: String) {
     // FROM 6.1.0
     // Write errors and other messages to stderr
 
-    let messageAsString = message + "\r\n"
-    if let messageAsData: Data = messageAsString.data(using: .utf8) {
-        STD_ERR.write(messageAsData)
-    }
+    writeOut(STD_ERR, message)
 }
 
 
@@ -457,9 +447,18 @@ func writeToStdout(_ message: String) {
     // FROM 6.2.0
     // Write result data to stdout
 
-    let resultAsString = message + "\r\n"
-    if let resultAsData: Data = resultAsString.data(using: .utf8) {
-        STD_OUT.write(resultAsData)
+    writeOut(STD_OUT, message)
+}
+
+
+func writeOut(_ fileHandle: FileHandle, _ message: String) {
+    
+    // FROM 6.2.0
+    // Write message to specified file handle
+    
+    let outputString = message + "\r\n"
+    if let outputData: Data = outputString.data(using: .utf8) {
+        fileHandle.write(outputData)
     }
 }
 
@@ -551,13 +550,15 @@ func processActionValue(_ arg: String, _ action: String, _ isWidth: Bool) -> Int
     // FROM 6.2.0
     // Convert an action parameter to an int, or throw
     // an error if a crop, scale or pad value is bad
+    
     if arg.lowercased() == "x" {
         // User wants to retain the image's native value
         return USE_IMAGE
     }
 
     if arg.lowercased() == "m" {
-        // User wants to retain the image's native value
+        // User wants a dimension determined by
+        // the source image's aspect ratio
         return isWidth ? SCALE_TO_HEIGHT : SCALE_TO_WIDTH
     }
 
@@ -584,7 +585,8 @@ func addAction(_ action: String, _ width: Int, _ height: Int) {
         reportWarning("Action \(theAction) will not change the image -- ignoring")
         return
     }
-
+    
+    // Add the action to the list of those we'll perform
     actions.add(Action.init(action, width, height, padColour))
 }
 
@@ -620,7 +622,7 @@ func processCropFix(_ arg: String) -> Int {
         if workArg.hasSuffix("r") { value += 2 }
     }
 
-    // If there was no text match so throw an error
+    // If there was no text match, throw an error
     if value < 0 || value > 8 {
         reportErrorAndExit("Invalid crop anchor point: \(arg)")
     }
