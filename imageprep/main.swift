@@ -91,6 +91,7 @@ var actions: NSMutableArray = NSMutableArray.init()
 
 // FROM 6.2.0
 var justInfo: Bool = false
+var cropFix: Int = 4
 
 // CLI argument management
 var argValue: Int = 0
@@ -207,13 +208,6 @@ func processFile(_ file: String) {
     // Get the full source image path
     let inputFile = "\(sourcePath)/\(file)"
 
-    /* Only proceed if the source image file is non-zero
-    if getFileSize(inputFile) == 0 {
-        report("File \(file) has no content -- skipping")
-        return
-    }
-    */
-
     // Check the source image by loading it and getting image info
     let imageInfo: ImageInfo? = getImageInfo(inputFile)
     if imageInfo == nil {
@@ -256,21 +250,58 @@ func processFile(_ file: String) {
         for i: Int in 0..<actions.count {
             let action: Action = actions.object(at: i) as! Action
 
-            // FROM 6.2.0 -- set width, height appropriately: first for raw image valiues...
-            var width = action.width == USE_IMAGE ? imageInfo!.width : action.width
-            var height = action.height == USE_IMAGE ? imageInfo!.height : action.height
+            // FROM 6.2.0
+            // Calculate actual width and height of final image based on input
+            // Set width, height appropriately: first for raw image valiues...
+            var width: Int = action.width == USE_IMAGE ? imageInfo!.width : action.width
+            var height: Int = action.height == USE_IMAGE ? imageInfo!.height : action.height
 
             // ...then for aspect ratio
             width = action.width == SCALE_TO_HEIGHT ? Int(CGFloat(action.height) * imageInfo!.aspectRatio) : width
             height = action.height == SCALE_TO_WIDTH ? Int(CGFloat(action.width) / imageInfo!.aspectRatio) : height
 
             // Apply the action
-            if action.type == "-z" {
-                // Do a separate scale action to avoid losing alpha
-                runSips([tmpFile, action.type, "\(height)", "\(width)"])
-            } else {
-                runSips([tmpFile, action.type, "\(height)", "\(width)", "--padColor", action.colour])
+            var sipsArgs: [String] = [tmpFile, action.type, "\(height)", "\(width)"]
+
+            if action.type != "-z" {
+                if action.type == "-c" && cropFix != 4 {
+                    // Calculate the x and y offsets and add --cropOffset to the command array
+                    var xOffset: Int = 0
+                    var yOffset: Int = 0
+
+                    if cropFix > 2 {
+                        yOffset = imageInfo!.height - height
+                    }
+
+                    if cropFix == 3 || cropFix == 5 {
+                        yOffset = yOffset / 2
+                    }
+
+                    if cropFix % 3 != 0 {
+                        xOffset = imageInfo!.width - width
+                    }
+
+                    if cropFix == 1 || cropFix == 7 {
+                        xOffset = xOffset / 2
+                    }
+
+                    // QUIRKS
+                    // sips shows incorrect behaviour with certain --cropOffset values, so we adjust
+                    // below -- should warn users about this
+                    if cropFix == 0 || cropFix == 6 {
+                        xOffset = 1
+                        reportWarning("Adjusting by 1 pixel for a bug in sips")
+                    }
+
+                    sipsArgs.append(contentsOf: ["--cropOffset", "\(yOffset)", "\(xOffset)"])
+                }
+
+                // Don't add a pad colour to a scale to avoid losing alpha
+                sipsArgs.append(contentsOf: ["--padColor", action.colour])
             }
+
+            print("\(sipsArgs)")
+            runSips(sipsArgs)
         }
     }
 
@@ -570,6 +601,34 @@ func getActionName(_ action: String) -> String {
 }
 
 
+func processCropFix(_ arg: String) -> Int {
+
+    // FROM 6.2.0
+
+    let workArg = arg.lowercased()
+
+    // Check for a numeric value
+    var value = Int(workArg) ?? -99
+    if value == -99 {
+        // 'arg' is textual, eg. 'tr', so convert to a value
+        if workArg.hasPrefix("t") { value = 0 }
+        if workArg.hasPrefix("c") { value = 3 }
+        if workArg.hasPrefix("b") { value = 6 }
+
+        if workArg.hasSuffix("l") { value += 0 }
+        if workArg.hasSuffix("c") { value += 1 }
+        if workArg.hasSuffix("r") { value += 2 }
+    }
+
+    // If there was no text match so throw an error
+    if value < 0 || value > 8 {
+        reportErrorAndExit("Invalid crop anchor point: \(arg)")
+    }
+
+    return value
+}
+
+
 func showHelp() {
 
     // Display the help screen
@@ -585,8 +644,8 @@ func showHelp() {
     writeToStderr("\nA macOS image preparation utility.\r\n" + ITALIC + "https://smittytone.net/imageprep/index.html\n" + RESET)
     writeToStderr(BOLD + "USAGE" + RESET + "\n    imageprep [-s path] [-d path] [-c pad_colour]")
     writeToStderr("              [-a s scale_height scale_width] [-a p pad_height pad_width]")
-    writeToStderr("              [-a c crop_height crop_width] [-r] [-f] [-k] [-o] [-i]")
-    writeToStderr("              [-h] [--createdirs] [--version]\n")
+    writeToStderr("              [-a c crop_height crop_width] [--cropfrom point] [-r] [-f] [-k]")
+    writeToStderr("              [-o] [-h] [--info] [--createdirs] [--version]\n")
     writeToStderr("    Image formats supported: \(formats).\n")
     writeToStderr(BOLD + "OPTIONS" + RESET)
     writeToStderr("    -s | --source      {path}                  The path to an image or a directory of images.")
@@ -597,12 +656,14 @@ func showHelp() {
     writeToStderr("                                               x to use the image's existing dimension, or m to maintain")
     writeToStderr("                                               the source image's aspect ratio")
     writeToStderr("    -c | --colour      {colour}                The padding colour in Hex, eg. A1B2C3. Default: FFFFFF.")
+    writeToStderr("         --cropfrom    {point}                 Anchor point for crop actions. Use tr for top right, cl for")
+    writeToStderr("                                               centre left, br for bottom right, etc.")
     writeToStderr("    -r | --resolution  {dpi}                   Set the image dpi, eg. 300.")
     writeToStderr("    -f | --format      {format}                Set the image format (see above).")
     writeToStderr("    -o | --overwrite                           Overwrite an existing file. Without this, existing files will be kept.")
-    writeToStderr("         --createdirs                          Make target intermediate directories if they do not exist.")
     writeToStderr("    -k | --keep                                Keep the source file. Without this, the source will be deleted.")
-    writeToStderr("    -i | --info                                Export basic image info: path, height, width, dpi and alpha.")
+    writeToStderr("         --createdirs                          Make target intermediate directories if they do not exist.")
+    writeToStderr("         --info                                Export basic image info: path, height, width, dpi and alpha.")
     writeToStderr("    -q | --quiet                               Silence output messages (errors excepted).")
     writeToStderr("    -h | --help                                This help screen.")
     writeToStderr("         --version                             Version information.\n")
@@ -617,6 +678,8 @@ func showHelp() {
     writeToStderr("        imageprep -s $SOURCE -d $DEST --createdirs -a c 1000 1000 -k\n")
     writeToStderr("    Crop files to 1000 x source image height, keeping originals:\n")
     writeToStderr("        imageprep -s $SOURCE -d $DEST -a c 1000 x -k\n")
+    writeToStderr("    Crop files to 500 x 500, anchored at top right:\n")
+    writeToStderr("        imageprep -s $SOURCE -d $DEST -a c 500 500 --cropfrom tr\n")
     writeToStderr("    Pad to 2000 x 2000 with magenta, deleting the originals:\n")
     writeToStderr("        imageprep -s $SOURCE -d $DEST -a p 2000 2000 -c ff00ff\n")
 }
@@ -712,6 +775,9 @@ for argument in args {
                 padHeight = processActionValue(argument, actionType, false)
                 addAction("-p", padWidth, padHeight)
             }
+        case 9:
+            // Set crop offset: will be a value in range 0-8
+            cropFix = processCropFix(argument)
         default:
             reportErrorAndExit("Unknown value: \(argument)")
         }
@@ -766,10 +832,10 @@ for argument in args {
             doOverwrite = true
         case "--createdirs":
             doMakeSubDirectories = true
-        case "-i":
-            fallthrough
         case "--info":
             justInfo = true
+        case "--cropfrom":
+            argValue = 9
         case "-h":
             fallthrough
         case "--help":
