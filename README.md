@@ -1,4 +1,4 @@
-# imageprep 6.2.0 #
+# imageprep 6.2.1 #
 
 *imageprep* is an image preparation utility for macOS. It is essentially a wrapper for *sips*.
 
@@ -56,7 +56,9 @@ From version 6.2.0, you can specify an anchor point for crop operations. Use the
 
 ## Release Notes ##
 
-- 6.2.0 *Unreleased*
+- 6.2.1 *13 January 2021*
+    - No code changes — packaging update only.
+- 6.2.0 *28 December 2020*
     - Add `--cropfrom` flag to select a crop anchor point.
     - Add `--info` argument.
     - Add the ability to crop/scale/pad to the width or height of the source image.
@@ -79,7 +81,7 @@ From version 6.2.0, you can specify an anchor point for crop operations. Use the
 
 ## Copyright ##
 
-*imageprep* is copyright &copy; 2020, Tony Smith.
+*imageprep* is copyright &copy; 2021, Tony Smith.
 
 ## Licence ##
 
