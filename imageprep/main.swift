@@ -93,6 +93,10 @@ var actions: NSMutableArray = NSMutableArray.init()
 var justInfo: Bool = false
 var cropFix: Int = 4
 
+// FROM 6.3.0
+var cropLeft: Int = -1
+var cropDown: Int = -1
+
 // CLI argument management
 var argValue: Int = 0
 var argCount: Int = 0
@@ -252,36 +256,40 @@ func processFile(_ file: String) {
             var sipsArgs: [String] = [tmpFile, action.type, "\(height)", "\(width)"]
 
             if action.type != "-z" {
-                if action.type == "-c" && cropFix != 4 {
-                    // Calculate the x and y offsets and add --cropOffset to the command array
-                    var xOffset: Int = 0
-                    var yOffset: Int = 0
+                if action.type == "-c" {
+                    if cropFix != 4 {
+                        // Calculate the x and y offsets and add --cropOffset to the command array
+                        var xOffset: Int = 0
+                        var yOffset: Int = 0
 
-                    if cropFix > 2 {
-                        yOffset = imageInfo!.height - height
+                        if cropFix > 2 {
+                            yOffset = imageInfo!.height - height
+                        }
+
+                        if cropFix == 3 || cropFix == 5 {
+                            yOffset = yOffset >> 1
+                        }
+
+                        if cropFix % 3 != 0 {
+                            xOffset = imageInfo!.width - width
+                        }
+
+                        if cropFix == 1 || cropFix == 7 {
+                            xOffset = xOffset >> 1
+                        }
+
+                        // QUIRKS
+                        // sips shows incorrect behaviour with certain --cropOffset values, so we adjust
+                        // below -- should warn users about this
+                        if cropFix == 0 || cropFix == 6 {
+                            xOffset = 1
+                            reportWarning("Adjusting by 1 pixel for a bug in sips")
+                        }
+                        
+                        sipsArgs.append(contentsOf: ["--cropOffset", "\(yOffset)", "\(xOffset)"])
+                    } else if cropLeft != -1 && cropDown != -1 {
+                        sipsArgs.append(contentsOf: ["--cropOffset", "\(cropDown)", "\(cropLeft)"])
                     }
-
-                    if cropFix == 3 || cropFix == 5 {
-                        yOffset = yOffset >> 1
-                    }
-
-                    if cropFix % 3 != 0 {
-                        xOffset = imageInfo!.width - width
-                    }
-
-                    if cropFix == 1 || cropFix == 7 {
-                        xOffset = xOffset >> 1
-                    }
-
-                    // QUIRKS
-                    // sips shows incorrect behaviour with certain --cropOffset values, so we adjust
-                    // below -- should warn users about this
-                    if cropFix == 0 || cropFix == 6 {
-                        xOffset = 1
-                        reportWarning("Adjusting by 1 pixel for a bug in sips")
-                    }
-
-                    sipsArgs.append(contentsOf: ["--cropOffset", "\(yOffset)", "\(xOffset)"])
                 }
 
                 // Don't add a pad colour to a scale to avoid losing alpha
@@ -607,10 +615,10 @@ func processCropFix(_ arg: String) -> Int {
 
     // FROM 6.2.0
 
-    let workArg = arg.lowercased()
+    let workArg: String = arg.lowercased()
 
     // Check for a numeric value
-    var value = Int(workArg) ?? -99
+    var value: Int = Int(workArg) ?? -99
     if value == -99 {
         // 'arg' is textual, eg. 'tr', so convert to a value
         if workArg.hasPrefix("t") { value = 0 }
@@ -627,6 +635,20 @@ func processCropFix(_ arg: String) -> Int {
         reportErrorAndExit("Invalid crop anchor point: \(arg)")
     }
 
+    return value
+}
+
+
+func processCropOffset(_ arg: String) -> Int {
+    
+    // FROM 6.3.0
+    
+    let workArg: String = arg.lowercased()
+    let value: Int = Int(workArg) ?? -99
+    if value < 0 {
+        reportErrorAndExit("Invalid crop offset: \(arg)")
+    }
+    
     return value
 }
 
@@ -660,6 +682,8 @@ func showHelp() {
     writeToStderr("    -c | --colour      {colour}                The padding colour in Hex, eg. A1B2C3. Default: FFFFFF.")
     writeToStderr("         --cropfrom    {point}                 Anchor point for crop actions. Use tr for top right, cl for")
     writeToStderr("                                               centre left, br for bottom right, etc.")
+    writeToStderr("         --offset      {y} {x}                 Specify a top-left co-ordinate for the crop origin.")
+    writeToStderr("                                               This setting will be overridden by --cropfrom")
     writeToStderr("    -r | --resolution  {dpi}                   Set the image dpi, eg. 300.")
     writeToStderr("    -f | --format      {format}                Set the image format (see above).")
     writeToStderr("    -o | --overwrite                           Overwrite an existing file. Without this, existing files will be kept.")
@@ -780,11 +804,18 @@ for argument in args {
         case 9:
             // Set crop offset: will be a value in range 0-8
             cropFix = processCropFix(argument)
+        case 10:
+            // FROM 6.3.0
+            // Set specific crop offset
+            cropFix = 4
+            cropDown = processCropOffset(argument)
+        case 11:
+            cropLeft = processCropOffset(argument)
         default:
             reportErrorAndExit("Unknown value: \(argument)")
         }
 
-        if argValue > 5 && argValue < 8 {
+        if argValue == 6 || argValue == 7 || argValue == 10 {
             argValue += 1
         } else {
             argValue = 0
@@ -838,6 +869,8 @@ for argument in args {
             justInfo = true
         case "--cropfrom":
             argValue = 9
+        case "--offset":
+            argValue = 10
         case "-h":
             fallthrough
         case "--help":
