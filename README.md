@@ -1,4 +1,4 @@
-# imageprep 6.2.1 #
+# imageprep 6.3.0 #
 
 *imageprep* is an image preparation utility for macOS. It is essentially a wrapper for *sips*.
 
@@ -9,9 +9,10 @@ imageprep [--source path] [--destination path] \
           [--action s scale_height scale_width] \
           [--action p pad_height pad_width] \
           [--action c crop_height crop_width] \
-          [--cropfrom anchor_point] [--colour pad_colour] \
-          [--resolution dpi_value] [--format format_type] \
-          [--keep] [--overwrite] [--info] [--createdirs] \
+          [--cropfrom anchor_point] [--offset y-coord x-coord] \
+          [--colour pad_colour] [--resolution dpi_value] \
+          [--format format_type] [--keep] [--overwrite] \
+          [--info] [--createdirs] \
           [--help] [--version]
 ```
 
@@ -26,6 +27,7 @@ For more detailed guidance on using *imageprep*, please [see this page](https://
 | `-a` | `--action` | `{type}`&nbsp;`{width}`&nbsp;`{height}` | The crop/pad dimensions. Type is s (scale), c (crop) or p (pad), eg. `-a s 200 200` |
 | `-c` | `--colour` | `{colour}` | The padding colour in Hex, eg. `A1B2C3`. Numbers may be prefixed `#`, `$` or `0x`, or habve no prefix. Default: `FFFFFF` |
 |      | `--cropfrom` | `{anchor point}` | Set an anchor point for crop actions. See [**Anchor Points**](#anchor-points) below |
+|      | `--offset` | `{x} {y}` | Set an anchor point for crop actions. See [**Anchor Points**](#anchor-points) below |
 | `-r` | `--resolution` | `{dpi}` | Set the image dpi, eg. 300 |
 | `-f` | `--format` | `{format}` | Set the image format: JPG/JPEG, PNG, GIF, BMP or TIF/TIFF |
 |      | `--createdirs` |  | Create intermediate directories to the destination, if needed. Default: do not create |
@@ -40,7 +42,7 @@ You can add any number of actions: they will be applied in the order they appear
 
 ### Anchor Points ###
 
-From version 6.2.0, you can specify an anchor point for crop operations. Use the `--cropfrom` switch and a value to indicate the anchor point: text markers, eg. `tr` for top-right, `bl` for bottom-left or `cr` for centre-right, etc., or a numerical value:
+You can specify an anchor point for crop operations. Use the `--cropfrom` switch and a value to indicate the anchor point: text markers, eg. `tr` for top-right, `bl` for bottom-left or `cr` for centre-right, etc., or a numerical value:
 
 | &nbsp; | Left | Centre | Right |
 | :-: | :-: | :-: | :-: |
@@ -54,8 +56,14 @@ From version 6.2.0, you can specify an anchor point for crop operations. Use the
 | **Centre** | `3` | N/A | `5` |
 | **Bottom** | `6` | `7` | `8` |
 
+From version 6.3.0, you can specify crop anchors as x and y co-ordinates: this is the co-ordinate of the top left point of the retained area. For example, with a 1920 x 1080 image, to crop out all but a 500 by 400 area in the top left of the image, you would specify 500 and 400 as your width and height values, and 10 and 20 as your offset co-ordinates. Offset values cannot be negative, and values beyond the dimensions of the source image will be ignored.
+
+Please note that if you specify a crop anchor point using `--cropfrom`, it will override any offset value you specify.
+
 ## Release Notes ##
 
+- 6.3.0 *Unreleased*
+    - Add `--offset` flag to set an alternative crop anchor point.
 - 6.2.1 *13 January 2021*
     - No code changes — packaging update only.
 - 6.2.0 *28 December 2020*
