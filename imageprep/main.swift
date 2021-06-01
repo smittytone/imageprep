@@ -2,7 +2,7 @@
     imageprep
     main.swift
 
-    Copyright © 2020 Tony Smith. All rights reserved.
+    Copyright © 2021 Tony Smith. All rights reserved.
 
     MIT License
     Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -727,7 +727,7 @@ func showVersion() {
     // Display the utility's version
 
     showHeader()
-    writeToStderr("Copyright 2020, Tony Smith (@smittytone).\r\nSource code available under the MIT licence.")
+    writeToStderr("Copyright 2021, Tony Smith (@smittytone).\r\nSource code available under the MIT licence.")
 }
 
 
