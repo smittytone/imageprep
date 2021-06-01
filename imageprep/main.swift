@@ -808,9 +808,9 @@ for argument in args {
             // FROM 6.3.0
             // Set specific crop offset
             cropFix = 4
-            cropDown = processCropOffset(argument)
-        case 11:
             cropLeft = processCropOffset(argument)
+        case 11:
+            cropDown = processCropOffset(argument)
         default:
             reportErrorAndExit("Unknown value: \(argument)")
         }
