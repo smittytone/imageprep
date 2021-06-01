@@ -130,7 +130,7 @@ func processRelativePath(_ relativePath: String) -> String {
     // Add the basepath (the current working directory of the call) to the
     // supplied relative path - and then resolve it
 
-    let absolutePath = fm.currentDirectoryPath + "/" + relativePath
+    let absolutePath: String = fm.currentDirectoryPath + "/" + relativePath
     return (absolutePath as NSString).standardizingPath
 }
 
@@ -182,13 +182,13 @@ func processFile(_ file: String) {
     //      'sourcePath' to it when working at file level
 
     // Get the file extension
-    let ext = (file.lowercased() as NSString).pathExtension
+    let ext: String = (file.lowercased() as NSString).pathExtension
 
     // Only proceed if we have a file of the correct extension
     if !SUPPORTED_TYPES.contains(ext) { return }
 
     // Determine the file's output file path
-    var outputFile = destPath + "/"
+    var outputFile: String = destPath + "/"
     if destIsdirectory.boolValue {
         // Target's a directory, so add the file name
         outputFile += file
@@ -198,7 +198,7 @@ func processFile(_ file: String) {
     }
 
     // Get the full source image path
-    let inputFile = "\(sourcePath)/\(file)"
+    let inputFile: String = "\(sourcePath)/\(file)"
 
     // Check the source image by loading it and getting image info
     let imageInfo: ImageInfo? = getImageInfo(inputFile)
@@ -209,13 +209,13 @@ func processFile(_ file: String) {
 
     if justInfo {
         // User just wants file data, so output it and exit
-        let hasAlpha = imageInfo!.hasAlpha ? "alpha" : "no-alpha"
+        let hasAlpha: String = imageInfo!.hasAlpha ? "alpha" : "no-alpha"
         writeToStdout("\(inputFile) \(imageInfo!.width) \(imageInfo!.height) \(imageInfo!.dpi) \(imageInfo!.aspectRatio) " + hasAlpha)
         return
     }
 
     // Set the temporary work file path
-    let tmpFile = outputFile + ".sipstmp"
+    let tmpFile: String = outputFile + ".sipstmp"
 
     // Make the temporary work file. It's a TIFF so we need to
     // check the source image type first
@@ -310,7 +310,7 @@ func processFile(_ file: String) {
     if doReformat {
         // Whatever the image type, we output the new format
         // as a new file with the correct extension
-        let newOutputFile = (outputFile as NSString).deletingPathExtension + "." + formatExtension
+        let newOutputFile: String = (outputFile as NSString).deletingPathExtension + "." + formatExtension
 
         if fm.fileExists(atPath: newOutputFile) && !doOverwrite {
             // Uh oh! There's already a file there and we have not set the 'do overwrite' flag
@@ -328,14 +328,14 @@ func processFile(_ file: String) {
     }
 
     // Remove the temporary work file now we're done
-    let success = removeFile(tmpFile)
+    let success: Bool = removeFile(tmpFile)
     if !success {
         reportWarning("Could not delete temporary file \(tmpFile) after processing")
     }
 
     // Remove the source file, if requested
     if doDeleteSource {
-        let success = removeFile(inputFile)
+        let success: Bool = removeFile(inputFile)
         if !success {
             reportWarning("Could not delete source file \(inputFile) after processing")
         }
@@ -372,7 +372,7 @@ func runSips(_ args: [String]) {
     if args.count > 0 { task.arguments = args }
 
     // Pipe out the output to avoid putting it in the log
-    let outputPipe = Pipe()
+    let outputPipe: Pipe = Pipe()
     task.standardOutput = outputPipe
     task.standardError = outputPipe
 
@@ -389,7 +389,7 @@ func runSips(_ args: [String]) {
     if !task.isRunning {
         if (task.terminationStatus != 0) {
             // Command failed -- collect the output if there is any
-            let outputHandle = outputPipe.fileHandleForReading
+            let outputHandle: FileHandle = outputPipe.fileHandleForReading
             var outString: String = ""
             if outputHandle.availableData.count > 0 {
                 outString = String(data: outputHandle.availableData, encoding: String.Encoding.utf8) ?? ""
@@ -464,7 +464,7 @@ func writeOut(_ fileHandle: FileHandle, _ message: String) {
     // FROM 6.2.0
     // Write message to specified file handle
     
-    let outputString = message + "\r\n"
+    let outputString: String = message + "\r\n"
     if let outputData: Data = outputString.data(using: .utf8) {
         fileHandle.write(outputData)
     }
@@ -475,13 +475,13 @@ func processColour(_ colourString: String) -> String {
 
     // Take a colour value input, make sure it's hex and clean it up for sips
 
-    var workColour = colourString
+    var workColour: String = colourString
 
     // Remove any preceeding hex markers
     while true {
         var match: Bool = false
 
-        for prefixString in ["#", "0x", "\\x", "x", "$"] {
+        for prefixString: String in ["#", "0x", "\\x", "x", "$"] {
             if (workColour as NSString).hasPrefix(prefixString) {
                 workColour = String(workColour.suffix(workColour.count - prefixString.count))
                 match = true
@@ -497,7 +497,7 @@ func processColour(_ colourString: String) -> String {
     }
 
     // Check it's actually hex (or makes sense as hex)
-    let scanner = Scanner.init(string: workColour)
+    let scanner: Scanner = Scanner.init(string: workColour)
     var dummy: UInt32 = 0
     if !scanner.scanHexInt32(&dummy) {
         reportErrorAndExit("Invalid hex colour value supplied \(colourString)")
@@ -520,7 +520,7 @@ func processFormat(_ format: String) -> String {
     // Store the expected format as provided by the user --
     // this is later used to set the target's file extension
     formatExtension = format
-    var workFormat = format.lowercased()
+    var workFormat: String = format.lowercased()
 
     // If we don't have a good format, bail
     if !SUPPORTED_TYPES.contains(workFormat) {
@@ -570,7 +570,7 @@ func processActionValue(_ arg: String, _ action: String, _ isWidth: Bool) -> Int
         return isWidth ? SCALE_TO_HEIGHT : SCALE_TO_WIDTH
     }
 
-    let value = Int(arg) ?? 0
+    let value: Int = Int(arg) ?? 0
     if value < 1 {
         let theValue: String = isWidth ? "width" : "height"
         let theAction: String = getActionName(action)
@@ -682,7 +682,7 @@ func showHelp() {
     writeToStderr("    -c | --colour      {colour}                The padding colour in Hex, eg. A1B2C3. Default: FFFFFF.")
     writeToStderr("         --cropfrom    {point}                 Anchor point for crop actions. Use tr for top right, cl for")
     writeToStderr("                                               centre left, br for bottom right, etc.")
-    writeToStderr("         --offset      {y} {x}                 Specify a top-left co-ordinate for the crop origin.")
+    writeToStderr("         --offset      {x} {y}                 Specify a top-left co-ordinate for the crop origin.")
     writeToStderr("                                               This setting will be overridden by --cropfrom")
     writeToStderr("    -r | --resolution  {dpi}                   Set the image dpi, eg. 300.")
     writeToStderr("    -f | --format      {format}                Set the image format (see above).")
@@ -716,8 +716,8 @@ func showHeader() {
     // Display the utility's version number
 
     let version: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String
-    let build: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as! String
-    let name:String = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as! String
+    let build: String   = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as! String
+    let name: String    = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as! String
     writeToStderr("\(name) \(version) (\(build))")
 }
 
@@ -743,7 +743,7 @@ signal(SIGINT) {
 
 // FROM 6.1.0
 // No arguments? Show Help
-var args = CommandLine.arguments
+var args: [String] = CommandLine.arguments
 if args.count == 1 {
     showHelp()
     exit(EXIT_SUCCESS)
@@ -979,7 +979,7 @@ if sourceIsdirectory.boolValue {
         }
 
         // Otherwise proceess each item - 'processFile()' determines suitability
-        for file in contents.sorted() {
+        for file: String in contents.sorted() {
             processFile(file)
         }
     } catch {
