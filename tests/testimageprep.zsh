@@ -6,10 +6,15 @@
 # imageprep test harness
 #
 # @author    Tony Smith
-# @copyright 2020, Tony Smith
-# @version   1.0.1
+# @copyright 2021, Tony Smith
+# @version   1.1.0
 # @license   MIT
 #
+
+if [ -z "$1" ]; then
+    echo "Usage: ./imagepreptest.zsh path/to/test/binary"
+    exit 1
+fi
 
 test_app="$1"
 image_src="$(pwd)/source"
@@ -523,6 +528,47 @@ if [[ "$result1" != "  pixelHeight: 800" && "$result2" != "  pixelWidth: 650" ]]
 fi
 
 pass
-echo -e "NOTE -- Manually verify 2000AD_0086_24.jpg is a bottom-right crop\n"
+echo "NOTE -- Manually verify 2000AD_0086_24.jpg is a bottom-right crop"
+
+# TEST -- check crop offset
+new_test
+result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a c 229 231 --offset 285 97 -k -d 2000AD_0086_24b.jpg 2>&1)
+
+# Make sure image os 229 x 231
+result1=$(sips 2000AD_0086_24b.jpg -g pixelHeight -1)
+result2=$(sips 2000AD_0086_24b.jpg -g pixelWidth -1)
+result1=$(echo "$result1" | cut -d "|" -f2)
+result2=$(echo "$result1" | cut -d "|" -f2)
+if [[ "$result1" != "  pixelHeight: 231" && "$result2" != "  pixelWidth: 229" ]]; then
+    fail "Crop to 229 x 231 failed" $test_num
+fi
+
+pass
+echo "NOTE -- Manually verify 2000AD_0086_24b.jpg is a Johnny Alpha face crop"
+
+# TEST -- check for bad offset
+new_test
+result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a c 229 231 --offset -285 97 -k -d 2000AD_0086_24b.jpg 2>&1)
+
+# Make sure bad offset trapped
+result=$(echo -e "$result" | grep 'Invalid crop offset')
+if [[ -z "$result" ]]; then
+    fail "Bad crop offset not trapped" $test_num
+fi
+
+pass
+
+# TEST -- check for bad arg trapping
+new_test
+result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a c 229 --offset -285 97 -k -d 2000AD_0086_24c.jpg 2>&1)
+
+# Make sure bad offset trapped
+result=$(echo -e "$result" | grep 'Missing value for')
+if [[ -z "$result" ]]; then
+    fail "Missing value not trapped" $test_num
+fi
+
+pass
 
 echo "ALL TESTS PASSED"
+echo "DON'T FORGET TO DELETE TEST OUTPUT FILES BEFORE RE-RUNNING"
