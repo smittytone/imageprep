@@ -64,6 +64,7 @@ Please note that if you specify a crop anchor point using `--cropfrom`, it will 
 
 - 6.3.0 *Unreleased*
     - Add `--offset` flag to set an alternative crop anchor point.
+    - Better checking for missing value arguments.
 - 6.2.1 *13 January 2021*
     - No code changes — packaging update only.
 - 6.2.0 *28 December 2020*
