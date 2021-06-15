@@ -278,17 +278,11 @@ func processFile(_ file: String) {
                             xOffset = xOffset >> 1
                         }
 
-                        // QUIRKS
-                        // sips shows incorrect behaviour with certain --cropOffset values, so we adjust
-                        // below -- should warn users about this
-                        if cropFix == 0 || cropFix == 6 {
-                            xOffset = 1
-                            reportWarning("Adjusting by 1 pixel for a bug in sips")
-                        }
-                        
-                        sipsArgs.append(contentsOf: ["--cropOffset", "\(yOffset)", "\(xOffset)"])
+                        // FROM 6.3.1
+                        // Deal with sips zero offset issue with a function
+                        sipsArgs.append(contentsOf: ["--cropOffset", "\(sipsOffsetfix(yOffset))", "\(sipsOffsetfix(xOffset))"])
                     } else if cropLeft != -1 && cropDown != -1 {
-                        sipsArgs.append(contentsOf: ["--cropOffset", "\(cropDown)", "\(cropLeft)"])
+                        sipsArgs.append(contentsOf: ["--cropOffset", "\(sipsOffsetfix(cropDown))", "\(sipsOffsetfix(cropLeft))"])
                     }
                 }
 
@@ -402,6 +396,20 @@ func runSips(_ args: [String]) {
             }
         }
     }
+}
+
+
+func sipsOffsetfix(_ offsetValue: Int) -> Float {
+    
+    // FROM 6.3.1
+    // sips shows incorrect behaviour when --cropOffset values are zero,
+    // but it can handle fractional values, so convert the former to the
+    // latter
+    if offsetValue == 0 {
+        return 0.0001
+    }
+    
+    return Float(offsetValue)
 }
 
 
