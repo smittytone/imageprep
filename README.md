@@ -62,7 +62,7 @@ Please note that if you specify a crop anchor point using `--cropfrom`, it will 
 
 ## Release Notes ##
 
-* 6.3.1 *Unreleased*
+* 6.3.1 *16 June 2021*
     * Add better, broader fix for `sips` `no zero offsets, please’ issue.
 * 6.3.0 *2 June 2021*
     * Add `--offset` flag to set an alternative crop anchor point.
