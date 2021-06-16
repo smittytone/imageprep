@@ -769,7 +769,7 @@ for argument in args {
     if argValue != 0 {
         // Make sure we have a value to read, ie. the current arg is not a switch or flag
         // FROM 6.3.0 -- use regex so negative values are not mistaken for switches
-        let regExp: NSRegularExpression = try! NSRegularExpression.init(pattern: "[-]+[a-zA-Z]", options: [])
+        let regExp: NSRegularExpression = try! NSRegularExpression.init(pattern: "^[-]+[a-zA-Z]", options: [])
         let range: NSRange = regExp.rangeOfFirstMatch(in: argument, options: [], range: NSMakeRange(0, argument.count))
         if range.location != NSNotFound {
             reportErrorAndExit("Missing value for \(prevArg)")
