@@ -7,7 +7,7 @@
 #
 # @author    Tony Smith
 # @copyright 2021, Tony Smith
-# @version   1.1.0
+# @version   1.2.0
 # @license   MIT
 #
 
@@ -538,7 +538,7 @@ result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a c 229 231 --offset 28
 result1=$(sips 2000AD_0086_24b.jpg -g pixelHeight -1)
 result2=$(sips 2000AD_0086_24b.jpg -g pixelWidth -1)
 result1=$(echo "$result1" | cut -d "|" -f2)
-result2=$(echo "$result1" | cut -d "|" -f2)
+result2=$(echo "$result2" | cut -d "|" -f2)
 if [[ "$result1" != "  pixelHeight: 231" && "$result2" != "  pixelWidth: 229" ]]; then
     fail "Crop to 229 x 231 failed" $test_num
 fi
@@ -569,6 +569,22 @@ if [[ -z "$result" ]]; then
 fi
 
 pass
+
+# TEST -- check for zero offset adjustments
+new_test
+result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a c 1300 300 --offset 0 100 -k -d 2000AD_0086_24d.jpg 2>&1)
+
+# Make sure image os 1300 x 300
+result1=$(sips 2000AD_0086_24d.jpg -g pixelHeight -1)
+result2=$(sips 2000AD_0086_24d.jpg -g pixelWidth -1)
+result1=$(echo "$result1" | cut -d "|" -f2)
+result2=$(echo "$result2" | cut -d "|" -f2)
+if [[ "$result1" != "  pixelHeight: 300" && "$result2" != "  pixelWidth: 1300" ]]; then
+    fail "Crop to 1300 x 300 failed ($result1 x $result2)" $test_num
+fi
+
+pass
+echo "NOTE -- Manually verify 2000AD_0086_24b.jpg is a Johnny Alpha face crop"
 
 echo "ALL TESTS PASSED"
 echo "DON'T FORGET TO DELETE TEST OUTPUT FILES BEFORE RE-RUNNING"
