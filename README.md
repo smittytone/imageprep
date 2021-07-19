@@ -1,4 +1,4 @@
-# imageprep 6.3.2 #
+# imageprep 6.3.3 #
 
 *imageprep* is an image preparation utility for macOS. It is essentially a wrapper for *sips*.
 
@@ -62,6 +62,8 @@ Please note that if you specify a crop anchor point using `--cropfrom`, it will 
 
 ## Release Notes ##
 
+* 6.3.3 *Unreleased*
+    * Replace async signal unsafe ctrl-c trapper with safe one.
 * 6.3.2 *16 June 2021*
     * Correct a regular expression bug.
 * 6.3.1 *16 June 2021*
