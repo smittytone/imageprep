@@ -54,6 +54,9 @@ let SCALE_TO_WIDTH = -2
 let SCALE_TO_HEIGHT = -3
 let ACTION_TYPES = ["c", "s", "p"]
 
+let CTRL_C_MSG = "\(BSP)\(BSP)\rimageprep interrupted -- halting"
+let EXIT_CTRL_C_CODE: Int32 = 130
+
 
 // MARK: - Global Variables
 
@@ -744,11 +747,30 @@ func showVersion() {
 
 // FROM 6.1.0
 // Trap ctrl-c
+/*
 signal(SIGINT) {
     theSignal in writeToStderr("\(BSP)\(BSP)\rimageprep interrupted -- halting")
     exit(EXIT_FAILURE)
 }
+*/
 
+// FROM 6.3.2
+// Make sure the signal does not terminate the application
+signal(SIGINT, SIG_IGN)
+
+// Set up an event source for SIGINT...
+let dss: DispatchSourceSignal = DispatchSource.makeSignalSource(signal: SIGINT,
+                                                                queue: DispatchQueue.main)
+// ...add an event handler (from above)...
+dss.setEventHandler {
+    writeToStderr(CTRL_C_MSG)
+    exit(EXIT_CTRL_C_CODE)
+}
+
+// ...and start the event flow
+dss.resume()
+
+ 
 // FROM 6.1.0
 // No arguments? Show Help
 var args: [String] = CommandLine.arguments
@@ -986,7 +1008,7 @@ if sourceIsdirectory.boolValue {
         // If there are no contents, bail
         if contents.count == 0 {
             report("Source directory \(sourcePath) is empty")
-            exit(0)
+            exit(EXIT_SUCCESS)
         }
 
         // Otherwise proceess each item - 'processFile()' determines suitability
