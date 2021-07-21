@@ -30,89 +30,92 @@ import Cocoa
 
 // MARK: - Constants
 
-let SUPPORTED_TYPES = ["png", "jpeg", "tiff", "pict", "bmp", "gif", "jpg", "tif"]
-let DEDUPE_INDEX = 6
-let EMPTY_HEX_BYTES = "000000"
+let SUPPORTED_TYPES: [String]   = ["png", "jpeg", "tiff", "pict", "bmp", "gif", "jpg", "tif"]
+let DEDUPE_INDEX: Int           = 6
+let EMPTY_HEX_BYTES: String     = "000000"
 
 // FROM 6.1.0 -- Use stderr, stdout for output
-let STD_ERR = FileHandle.standardError
-let STD_OUT = FileHandle.standardOutput
-let STD_IN = FileHandle.standardInput
+let STD_ERR: FileHandle         = FileHandle.standardError
+let STD_OUT: FileHandle         = FileHandle.standardOutput
+let STD_IN: FileHandle          = FileHandle.standardInput
 
 // FROM 6.1.0 -- TTY formatting
-let RED = "\u{001B}[31m"
-let YELLOW = "\u{001B}[33m"
-let RESET = "\u{001B}[0m"
-let BOLD = "\u{001B}[1m"
-let ITALIC = "\u{001B}[3m"
-let BSP = String(UnicodeScalar(8))
+let RED: String                 = "\u{001B}[31m"
+let YELLOW: String              = "\u{001B}[33m"
+let RESET: String               = "\u{001B}[0m"
+let BOLD: String                = "\u{001B}[1m"
+let ITALIC: String              = "\u{001B}[3m"
+let BSP: String                 = String(UnicodeScalar(8))
 
 // FROM 6.2.0
-let BASE_DPI = 72.0
-let USE_IMAGE = -1
-let SCALE_TO_WIDTH = -2
-let SCALE_TO_HEIGHT = -3
-let ACTION_TYPES = ["c", "s", "p"]
-
-let CTRL_C_MSG = "\(BSP)\(BSP)\rimageprep interrupted -- halting"
-let EXIT_CTRL_C_CODE: Int32 = 130
+let BASE_DPI: CGFloat           = 72.0
+let USE_IMAGE: Int              = -1
+let SCALE_TO_WIDTH: Int         = -2
+let SCALE_TO_HEIGHT: Int        = -3
+let ACTION_TYPES: [String]      = ["c", "s", "p"]
+// FROM 6.3.3
+let CTRL_C_MSG: String          = "\(BSP)\(BSP)\rimageprep interrupted -- halting"
+let EXIT_CTRL_C_CODE: Int32     = 130
 
 
 // MARK: - Global Variables
 
 // File management values
-let fm: FileManager = FileManager.default
-var sourcePath: String = FileManager.default.currentDirectoryPath
-var sourceFile: String = ""
+let fm: FileManager             = FileManager.default
+var sourcePath: String          = FileManager.default.currentDirectoryPath
+var sourceFile: String          = ""
 var sourceIsdirectory: ObjCBool = false
-var destPath: String = ""
-var destFile: String = ""
-var destIsdirectory: ObjCBool = false
-var doOverwrite: Bool = false
-
+var destPath: String            = ""
+var destFile: String            = ""
+var destIsdirectory: ObjCBool   = false
+var doOverwrite: Bool           = false
 // FROM 6.1.0
-var doMakeSubDirectories: Bool = false
-var isPiped: Bool = false
+var doMakeSubDirectories: Bool  = false
+var isPiped: Bool               = false
 
 // Image attributes and action flags
-var padColour: String = "FFFFFF"
-var cropHeight: Int = 2182
-var cropWidth: Int = 1668
-var padHeight: Int = 2192
-var padWidth: Int = 1668
-var scaleHeight = padHeight
-var scaleWidth = padWidth
-var dpi: Float = 150.0
-var newFormatForSips: String = ""
-var formatExtension: String = "png"
-var doReformat: Bool = false
-var doChangeResolution: Bool = false
-var didChangeResolution: Bool = false
-var doShowMessages: Bool = true
-var doDeleteSource: Bool = true
-var actions: NSMutableArray = NSMutableArray.init()
-
+var padColour: String           = "FFFFFF"
+var cropHeight: Int             = 2182
+var cropWidth: Int              = 1668
+var padHeight: Int              = 2192
+var padWidth: Int               = 1668
+var scaleHeight                 = padHeight
+var scaleWidth                  = padWidth
+var dpi: Float                  = 150.0
+var newFormatForSips: String    = ""
+var formatExtension: String     = "png"
+var doReformat: Bool            = false
+var doChangeResolution: Bool    = false
+var didChangeResolution: Bool   = false
+var doShowMessages: Bool        = true
+var doDeleteSource: Bool        = true
+var actions: NSMutableArray     = NSMutableArray.init()
 // FROM 6.2.0
-var justInfo: Bool = false
-var cropFix: Int = 4
-
+var justInfo: Bool              = false
+var cropFix: Int                = 4
 // FROM 6.3.0
-var cropLeft: Int = -1
-var cropDown: Int = -1
+var cropLeft: Int               = -1
+var cropDown: Int               = -1
 
 // CLI argument management
-var argValue: Int = 0
-var argCount: Int = 0
-var actionType: String = "c"
-var prevArg: String = ""
-var fileCount: Int = 0
+var argValue: Int               = 0
+var argCount: Int               = 0
+var actionType: String          = "c"
+var prevArg: String             = ""
+var fileCount: Int              = 0
 
 
 // MARK: - Functions
 
+/**
+ Convert a partial path to an absolute path.
+ 
+ - Parameters:
+    - relativePath: A relative path, ie. contains `../` or lacks a `/` prefix.
+ 
+ - Returns: An absolute path as a string.
+ */
 func getFullPath(_ relativePath: String) -> String {
-
-    // Convert a partial path to an absolute path
 
     // Standardise the path as best as we can (this covers most cases)
     var absolutePath: String = (relativePath as NSString).standardizingPath
@@ -128,21 +131,31 @@ func getFullPath(_ relativePath: String) -> String {
 }
 
 
+/**
+ Add the basepath (the current working directory of the call) to the
+ supplied relative path - and then resolve it.
+ 
+ - Parameters:
+    - relativePath: A relative path, ie. contains `../` or lacks a `/` prefix.
+ 
+ - Returns: An absolute path as a string.
+ */
 func processRelativePath(_ relativePath: String) -> String {
-
-    // Add the basepath (the current working directory of the call) to the
-    // supplied relative path - and then resolve it
 
     let absolutePath: String = fm.currentDirectoryPath + "/" + relativePath
     return (absolutePath as NSString).standardizingPath
 }
 
 
+/**
+ Load the specified image and gather data from it.
+ 
+ - Parameters:
+    - path: An image file path.
+ 
+ - Returns: An ImageInfo object, or `nil` on error.
+ */
 func getImageInfo(_ path: String) -> ImageInfo? {
-
-    // FROM 6.2.0
-    // Load the specified image and gather data from it.
-    // Return nil if the file can't be read or contains no data
 
     // Read the target file in as data and check its length
     let data: Data = fm.contents(atPath: path) ?? Data.init(count: 0)
@@ -156,11 +169,14 @@ func getImageInfo(_ path: String) -> ImageInfo? {
 }
 
 
+/**
+ If we are to create all the directories to 'path', attempt to do so,
+ or just bail in other cases.
+ 
+ - Parameters:
+    - path: An image file path.
+ */
 func processDirectory(_ path: String) {
-
-    // FROM 6.1.0
-    // If we are to create all the directories to 'path', attempt to do so,
-    // or just bail in other cases
 
     if doMakeSubDirectories {
         // Try to create the path to the specified directory
@@ -178,11 +194,16 @@ func processDirectory(_ path: String) {
 }
 
 
+/**
+ Process a single source-image file.
+ 
+ **Note** `file` contains a file name, not a path, so we need to add
+ `sourcePath` to it when working at file level.
+ 
+ - Parameters:
+    - file: An image file name.
+ */
 func processFile(_ file: String) {
-
-    // Process a single source image file
-    // NOTE 'file' contains a file name, not a path, so we need to add
-    //      'sourcePath' to it when working at file level
 
     // Get the file extension
     let ext: String = (file.lowercased() as NSString).pathExtension
@@ -346,9 +367,15 @@ func processFile(_ file: String) {
 }
 
 
+/**
+ Generic file remover called from `processFile()`.
+ 
+ - Parameters:
+    - path: An image file path.
+ 
+ - Returns: `true` if the operation succeeded, otherwise `false`.
+ */
 func removeFile(_ path: String) -> Bool {
-
-    // Generic file remover called from 'processFile()'
 
     do {
         try fm.removeItem(at: URL.init(fileURLWithPath: path))
@@ -360,9 +387,13 @@ func removeFile(_ path: String) -> Bool {
 }
 
 
+/**
+ Call `sips` using Process.
+ 
+ - Parameters:
+    - args: An array of `sips` arguments.
+ */
 func runSips(_ args: [String]) {
-
-    // Call sips using Process
 
     let task: Process = Process()
     task.executableURL = URL.init(fileURLWithPath: "/usr/bin/sips")
@@ -402,12 +433,20 @@ func runSips(_ args: [String]) {
 }
 
 
+/**
+ `sips` shows incorrect behaviour when `--cropOffset` values are zero,
+ but it can handle fractional values, so convert the former to the
+ latter.
+ 
+ FROM 6.3.1
+ 
+ - Parameters:
+    - offsetValue: The integer value we are converting.
+ 
+ - Returns: The offset value as a float.
+ */
 func sipsOffsetfix(_ offsetValue: Int) -> Float {
     
-    // FROM 6.3.1
-    // sips shows incorrect behaviour when --cropOffset values are zero,
-    // but it can handle fractional values, so convert the former to the
-    // latter
     if offsetValue == 0 {
         return 0.0001
     }
@@ -416,9 +455,15 @@ func sipsOffsetfix(_ offsetValue: Int) -> Float {
 }
 
 
+/**
+ Generic message display routine.
+ 
+ Relies on global `doShowMessage`.
+ 
+ - Parameters:
+    - message: The string to output.
+ */
 func report(_ message: String) {
-
-    // Generic message display routine
 
     if doShowMessages {
         writeToStderr(message)
@@ -426,54 +471,82 @@ func report(_ message: String) {
 }
 
 
+/**
+ Generic warning display routine.
+ 
+ Does not exit on completion.
+ 
+ - Parameters:
+    - message: The string to output.
+ */
 func reportWarning(_ message: String) {
-
-    // FROM 6.2.0
-    // Generic warning display routine, but do not exit
 
     writeToStderr(YELLOW + BOLD + "WARNING" + RESET + " " + message)
 }
 
 
+/**
+ Generic error display routine.
+ 
+ Does not exit on completion.
+ 
+ - Parameters:
+    - message: The string to output.
+ */
 func reportError(_ message: String) {
-
-    // Generic error display routine, but do not exit
 
     writeToStderr(RED + BOLD + "ERROR" + RESET + " " + message)
 }
 
 
+/**
+ Generic error display routine.
+ 
+ Exits app on completion.
+ 
+ - Parameters:
+    - message: The string to output.
+    - code:    The exit code to issue. Default: `EXIT_FAILURE`.
+ */
 func reportErrorAndExit(_ message: String, _ code: Int32 = EXIT_FAILURE) {
-
-    // Generic error display routine, quitting the app after
 
     writeToStderr(RED + BOLD + "ERROR " + RESET + message + " -- exiting")
     exit(code)
 }
 
 
+/**
+ Write errors and other messages to `stderr`.
+ 
+ - Parameters:
+    - message: The string to output.
+ */
 func writeToStderr(_ message: String) {
-
-    // FROM 6.1.0
-    // Write errors and other messages to stderr
 
     writeOut(STD_ERR, message)
 }
 
 
-func writeToStdout(_ message: String) {
+/**
+ Write result data and app output to `stdout`.
+ 
+ - Parameters:
+    - output: The string to output.
+ */
+func writeToStdout(_ output: String) {
 
-    // FROM 6.2.0
-    // Write result data to stdout
-
-    writeOut(STD_OUT, message)
+    writeOut(STD_OUT, output)
 }
 
 
+/**
+ Write a string to the specified file handle.
+ 
+ - Parameters:
+    - fileHandle: The target file handle, eg. `STDERR`.
+    - message:    The string to be written.
+ */
 func writeOut(_ fileHandle: FileHandle, _ message: String) {
-    
-    // FROM 6.2.0
-    // Write message to specified file handle
     
     let outputString: String = message + "\r\n"
     if let outputData: Data = outputString.data(using: .utf8) {
@@ -482,13 +555,21 @@ func writeOut(_ fileHandle: FileHandle, _ message: String) {
 }
 
 
+/**
+ Validate a user-supplied colour value.
+ 
+ Check that the value is in hex, and clean it up for `sips`.
+ 
+ - Parameters:
+    - colourString: The colour value as a String.
+ 
+ - Returns: The corrected colour value as a String.
+ */
 func processColour(_ colourString: String) -> String {
-
-    // Take a colour value input, make sure it's hex and clean it up for sips
 
     var workColour: String = colourString
 
-    // Remove any preceeding hex markers
+    // Remove any likely preceeding hex markers
     while true {
         var match: Bool = false
 
@@ -523,10 +604,18 @@ func processColour(_ colourString: String) -> String {
 }
 
 
+/**
+ Validate a user-supplied file type.
+ 
+ Make sure a correct format has been passed, and adjust
+ it if for `sips` use, eg. `JPG` -> `jpeg`, `tif` -> `tiff`, etc.
+ 
+ - Parameters:
+    - format: The file format as a String.
+ 
+ - Returns: The corrected format as a String.
+ */
 func processFormat(_ format: String) -> String {
-
-    // Make sure a correct format has been passed, and adjust
-    // if for sips use, eg. 'JPG' -> 'jpeg', 'tif' -> 'tiff'
 
     // Store the expected format as provided by the user --
     // this is later used to set the target's file extension
@@ -549,10 +638,15 @@ func processFormat(_ format: String) -> String {
 }
 
 
+/**
+ Validate a user-supplied image-processing action's type.
+ 
+ - Parameters:
+    - arg: The action specification CLI argument.
+ 
+ - Returns: The corrected action marker as a lower case String.
+ */
 func processActionType(_ arg: String) -> String {
-
-    // From 6.2.0
-    // Check we have a valid action type
 
     let workArg: String = arg.lowercased()
 
@@ -564,12 +658,20 @@ func processActionType(_ arg: String) -> String {
 }
 
 
+/**
+ Validate a user-supplied image-processing action's settings.
+ 
+ The app will exit on an invalid setting.
+ 
+ - Parameters:
+    - arg:     The action setting CLI argument.
+    - action:  The action the setting relates to.
+    - isWidth: Is this an image-width setting?
+ 
+ - Returns: The corrected setting value as an integer.
+ */
 func processActionValue(_ arg: String, _ action: String, _ isWidth: Bool) -> Int {
 
-    // FROM 6.2.0
-    // Convert an action parameter to an int, or throw
-    // an error if a crop, scale or pad value is bad
-    
     if arg.lowercased() == "x" {
         // User wants to retain the image's native value
         return USE_IMAGE
@@ -592,12 +694,18 @@ func processActionValue(_ arg: String, _ action: String, _ isWidth: Bool) -> Int
 }
 
 
+/**
+ Validate a user-supplied action and add it to the list of actions to be performed on each image.
+ 
+ Ensure that if, for example, both height and width are image native, we don't need to do
+ anything.
+ 
+ - Parameters:
+    - action: The user-specified action, eg. `c` for 'crop'.
+    - width:  The target image-width.
+    - height: The target image-height.
+ */
 func addAction(_ action: String, _ width: Int, _ height: Int) {
-
-    // FROM 6.2.0
-    // Add an action to the list, but make sure it is valid -- ie.
-    // if both height and width are image native, we don't need to do
-    // anything
 
     if (width == USE_IMAGE && height == USE_IMAGE) || (width == SCALE_TO_HEIGHT && height == SCALE_TO_WIDTH) {
         let theAction: String = getActionName(action)
@@ -610,10 +718,17 @@ func addAction(_ action: String, _ width: Int, _ height: Int) {
 }
 
 
+/**
+ Return a human-readable action name.
+ 
+ For example, `c` is returned as `crop`, `s` as `scale`, `p` as `pad`.
+ 
+ - Parameters:
+    - action: The action code.
+ 
+ - Returns: The action's human-readable name.
+ */
 func getActionName(_ action: String) -> String {
-
-    // FROM 6.2.0
-    // Return a human-readable action name
 
     var theAction: String = "crop"
     if action == "s" || action == "-z" { theAction = "scale" }
@@ -622,9 +737,20 @@ func getActionName(_ action: String) -> String {
 }
 
 
+/**
+ Validate a user-specified crop anchor point value.
+ 
+ Converts textual anchor point identifiers to their numeric equivalents,
+ eg. `br` (bottom right) -> `8`.
+ 
+ The app will exit on an invalid value.
+ 
+ - Parameters:
+    - arg: The anchor point CLI argument.
+ 
+ - Returns: The decoded anchor point as an integer.
+ */
 func processCropFix(_ arg: String) -> Int {
-
-    // FROM 6.2.0
 
     let workArg: String = arg.lowercased()
 
@@ -650,9 +776,22 @@ func processCropFix(_ arg: String) -> Int {
 }
 
 
+/**
+ Validate a user-specified crop anchor point value.
+ 
+ Converts textual anchor point identifiers to their numeric equivalents,
+ eg. `br` (bottom right) -> `8`.
+ 
+ The app will exit on an invalid value.
+ 
+ FROM 6.3.0
+ 
+ - Parameters:
+    - arg: The anchor offset CLI argument.
+ 
+ - Returns: The anchor offset as an integer.
+ */
 func processCropOffset(_ arg: String) -> Int {
-    
-    // FROM 6.3.0
     
     let workArg: String = arg.lowercased()
     let value: Int = Int(workArg) ?? -99
@@ -664,10 +803,12 @@ func processCropOffset(_ arg: String) -> Int {
 }
 
 
+/**
+ Display the app's help information.
+ */
 func showHelp() {
 
-    // Display the help screen
-
+    // Display the version info
     showHeader()
 
     // Get the list of suported formats, ignoring similarly named ones
@@ -722,25 +863,26 @@ func showHelp() {
 }
 
 
-func showHeader() {
+/**
+ Display app version information
+ */
+func showVersion() {
 
-    // Display the utility's version number
+    showHeader()
+    writeToStderr("Copyright 2021, Tony Smith (@smittytone).\r\nSource code available under the MIT licence.")
+}
+
+
+/**
+ Display the app's version number
+ */
+func showHeader() {
 
     let version: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String
     let build: String   = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as! String
     let name: String    = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as! String
     writeToStderr("\(name) \(version) (\(build))")
 }
-
-
-func showVersion() {
-
-    // Display the utility's version
-
-    showHeader()
-    writeToStderr("Copyright 2021, Tony Smith (@smittytone).\r\nSource code available under the MIT licence.")
-}
-
 
 
 // MARK: - Runtime Start
