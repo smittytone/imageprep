@@ -62,7 +62,7 @@ Please note that if you specify a crop anchor point using `--cropfrom`, it will 
 
 ## Release Notes ##
 
-* 6.3.3 *Unreleased*
+* 6.3.3 *23 July 2021*
     * Replace async signal unsafe ctrl-c trapper with safe one.
 * 6.3.2 *16 June 2021*
     * Correct a regular expression bug.
