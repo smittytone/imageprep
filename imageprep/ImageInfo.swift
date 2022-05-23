@@ -2,7 +2,7 @@
     imageprep
     image.swift
 
-    Copyright © 2021 Tony Smith. All rights reserved.
+    Copyright © 2022 Tony Smith. All rights reserved.
 
     MIT License
     Permission is hereby granted, free of charge, to any person obtaining a copy

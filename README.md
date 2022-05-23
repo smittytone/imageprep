@@ -1,4 +1,4 @@
-# imageprep 6.3.3 #
+# imageprep 6.3.4 #
 
 *imageprep* is an image preparation utility for macOS. It is essentially a wrapper for *sips*.
 
@@ -62,41 +62,43 @@ Please note that if you specify a crop anchor point using `--cropfrom`, it will 
 
 ## Release Notes ##
 
-* 6.3.3 *23 July 2021*
-    * Replace async signal unsafe ctrl-c trapper with safe one.
-* 6.3.2 *16 June 2021*
-    * Correct a regular expression bug.
-* 6.3.1 *16 June 2021*
-    * Add better, broader fix for `sips` `no zero offsets, please’ issue.
-* 6.3.0 *2 June 2021*
-    * Add `--offset` flag to set an alternative crop anchor point.
-    * Better checking for missing value arguments.
-* 6.2.1 *13 January 2021*
-    * No code changes — packaging update only.
-* 6.2.0 *28 December 2020*
-    * Add `--cropfrom` flag to select a crop anchor point.
-    * Add `--info` argument.
-    * Add the ability to crop/scale/pad to the width or height of the source image.
-    * Add the ability to crop/scale/pad to a specified width or height using the aspect ratio of the source image.
-    * Refactor code.
-* 6.1.0 *21 December 2020*
-    * Add optional destination intermediate directory creation.
-    * Ignore sub-directories in the source directory for file-safety reasons.
-    * Colourise output for greater visibility.
-    * Sort source file list before processing.
-    * Write all messages to user via `stderr` ([click here to see why](https://clig.dev/#the-basics)).
-    * Correctly trap `SIGINT`.
-    * Correctly keep source file when no target file is named.
-    * Add examples to help text.
-    * Add test suite.
-* 6.0.0 *2 December 2020*
-    * Initial public release.
+- 6.3.4 *Unreleased*
+    - Add `man` page.
+- 6.3.3 *23 July 2021*
+    - Replace async signal unsafe ctrl-c trapper with safe one.
+- 6.3.2 *16 June 2021*
+    - Correct a regular expression bug.
+- 6.3.1 *16 June 2021*
+    - Add better, broader fix for `sips` `no zero offsets, please’ issue.
+- 6.3.0 *2 June 2021*
+    - Add `--offset` flag to set an alternative crop anchor point.
+    - Better checking for missing value arguments.
+- 6.2.1 *13 January 2021*
+    - No code changes — packaging update only.
+- 6.2.0 *28 December 2020*
+    - Add `--cropfrom` flag to select a crop anchor point.
+    - Add `--info` argument.
+    - Add the ability to crop/scale/pad to the width or height of the source image.
+    - Add the ability to crop/scale/pad to a specified width or height using the aspect ratio of the source image.
+    - Refactor code.
+- 6.1.0 *21 December 2020*
+    - Add optional destination intermediate directory creation.
+    - Ignore sub-directories in the source directory for file-safety reasons.
+    - Colourise output for greater visibility.
+    - Sort source file list before processing.
+    - Write all messages to user via `stderr` ([click here to see why](https://clig.dev/#the-basics)).
+    - Correctly trap `SIGINT`.
+    - Correctly keep source file when no target file is named.
+    - Add examples to help text.
+    - Add test suite.
+- 6.0.0 *2 December 2020*
+    - Initial public release.
 
 **Note** *imageprep* was initially released as version 6.0.0 for historical reasons: previous versions were released in the form of shell scripts.
 
 ## Copyright ##
 
-*imageprep* is copyright &copy; 2021, Tony Smith.
+*imageprep* is copyright &copy; 2022, Tony Smith.
 
 ## Licence ##
 

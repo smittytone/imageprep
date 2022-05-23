@@ -2,7 +2,7 @@
     imageprep
     main.swift
 
-    Copyright © 2021 Tony Smith. All rights reserved.
+    Copyright © 2022 Tony Smith. All rights reserved.
 
     MIT License
     Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -817,49 +817,49 @@ func showHelp() {
         formats += (SUPPORTED_TYPES[i].uppercased() + (i < DEDUPE_INDEX - 1 ? ", " : ""))
     }
 
-    writeToStderr("\nA macOS image preparation utility.\r\n" + ITALIC + "https://smittytone.net/imageprep/index.html\n" + RESET)
-    writeToStderr(BOLD + "USAGE" + RESET + "\n    imageprep [-s path] [-d path] [-c pad_colour]")
-    writeToStderr("              [-a s scale_height scale_width] [-a p pad_height pad_width]")
-    writeToStderr("              [-a c crop_height crop_width] [--cropfrom point] [-r] [-f] [-k]")
-    writeToStderr("              [-o] [-h] [--info] [--createdirs] [--version]\n")
-    writeToStderr("    Image formats supported: \(formats).\n")
-    writeToStderr(BOLD + "OPTIONS" + RESET)
-    writeToStderr("    -s | --source      {path}                  The path to an image or a directory of images.")
-    writeToStderr("                                               Default: current working directory.")
-    writeToStderr("    -d | --destination {path}                  The path to the images. Default: source directory.")
-    writeToStderr("    -a | --action      {type} {width} {height} The crop/pad dimensions. Type is s (scale), c (crop) or p (pad).")
-    writeToStderr("                                               Provide absolute integer values for width or height, or")
-    writeToStderr("                                               x to use the image's existing dimension, or m to maintain")
-    writeToStderr("                                               the source image's aspect ratio")
-    writeToStderr("    -c | --colour      {colour}                The padding colour in Hex, eg. A1B2C3. Default: FFFFFF.")
-    writeToStderr("         --cropfrom    {point}                 Anchor point for crop actions. Use tr for top right, cl for")
-    writeToStderr("                                               centre left, br for bottom right, etc.")
-    writeToStderr("         --offset      {x} {y}                 Specify a top-left co-ordinate for the crop origin.")
-    writeToStderr("                                               This setting will be overridden by --cropfrom")
-    writeToStderr("    -r | --resolution  {dpi}                   Set the image dpi, eg. 300.")
-    writeToStderr("    -f | --format      {format}                Set the image format (see above).")
-    writeToStderr("    -o | --overwrite                           Overwrite an existing file. Without this, existing files will be kept.")
-    writeToStderr("    -k | --keep                                Keep the source file. Without this, the source will be deleted.")
-    writeToStderr("         --createdirs                          Make target intermediate directories if they do not exist.")
-    writeToStderr("         --info                                Export basic image info: path, height, width, dpi and alpha.")
-    writeToStderr("    -q | --quiet                               Silence output messages (errors excepted).")
-    writeToStderr("    -h | --help                                This help screen.")
-    writeToStderr("         --version                             Version information.\n")
-    writeToStderr(BOLD + "EXAMPLES" + RESET)
-    writeToStderr("    Convert files in the current directory to JPEG and to 300dpi:\n")
-    writeToStderr("        imageprep -f jpeg -r 300\n")
-    writeToStderr("    Scale to 128 x 128, keeping the originals:\n")
-    writeToStderr("        imageprep -s $SOURCE -d $DEST -a s 128 128 -k\n")
-    writeToStderr("    Scale to height of 1024, width in aspect, keeping the originals:\n")
-    writeToStderr("        imageprep -s $SOURCE -d $DEST -a s m 1024 -k\n")
-    writeToStderr("    Crop files to 1000 x 100, making intermediate directories, keeping originals:\n")
-    writeToStderr("        imageprep -s $SOURCE -d $DEST --createdirs -a c 1000 1000 -k\n")
-    writeToStderr("    Crop files to 1000 x source image height, keeping originals:\n")
-    writeToStderr("        imageprep -s $SOURCE -d $DEST -a c 1000 x -k\n")
-    writeToStderr("    Crop files to 500 x 500, anchored at top right:\n")
-    writeToStderr("        imageprep -s $SOURCE -d $DEST -a c 500 500 --cropfrom tr\n")
-    writeToStderr("    Pad to 2000 x 2000 with magenta, deleting the originals:\n")
-    writeToStderr("        imageprep -s $SOURCE -d $DEST -a p 2000 2000 -c ff00ff\n")
+    writeToStdout("\nA macOS image preparation utility.\r\n" + ITALIC + "https://smittytone.net/imageprep/index.html\n" + RESET)
+    writeToStdout(BOLD + "USAGE" + RESET + "\n    imageprep [-s path] [-d path] [-c pad_colour]")
+    writeToStdout("              [-a s scale_height scale_width] [-a p pad_height pad_width]")
+    writeToStdout("              [-a c crop_height crop_width] [--cropfrom point] [-r] [-f] [-k]")
+    writeToStdout("              [-o] [-h] [--info] [--createdirs] [--version]\n")
+    writeToStdout("    Image formats supported: \(formats).\n")
+    writeToStdout(BOLD + "OPTIONS" + RESET)
+    writeToStdout("    -s | --source      {path}                  The path to an image or a directory of images.")
+    writeToStdout("                                               Default: current working directory.")
+    writeToStdout("    -d | --destination {path}                  The path to the images. Default: source directory.")
+    writeToStdout("    -a | --action      {type} {width} {height} The crop/pad dimensions. Type is s (scale), c (crop) or p (pad).")
+    writeToStdout("                                               Provide absolute integer values for width or height, or")
+    writeToStdout("                                               x to use the image's existing dimension, or m to maintain")
+    writeToStdout("                                               the source image's aspect ratio")
+    writeToStdout("    -c | --colour      {colour}                The padding colour in Hex, eg. A1B2C3. Default: FFFFFF.")
+    writeToStdout("         --cropfrom    {point}                 Anchor point for crop actions. Use tr for top right, cl for")
+    writeToStdout("                                               centre left, br for bottom right, etc.")
+    writeToStdout("         --offset      {x} {y}                 Specify a top-left co-ordinate for the crop origin.")
+    writeToStdout("                                               This setting will be overridden by --cropfrom")
+    writeToStdout("    -r | --resolution  {dpi}                   Set the image dpi, eg. 300.")
+    writeToStdout("    -f | --format      {format}                Set the image format (see above).")
+    writeToStdout("    -o | --overwrite                           Overwrite an existing file. Without this, existing files will be kept.")
+    writeToStdout("    -k | --keep                                Keep the source file. Without this, the source will be deleted.")
+    writeToStdout("         --createdirs                          Make target intermediate directories if they do not exist.")
+    writeToStdout("         --info                                Export basic image info: path, height, width, dpi and alpha.")
+    writeToStdout("    -q | --quiet                               Silence output messages (errors excepted).")
+    writeToStdout("    -h | --help                                This help screen.")
+    writeToStdout("         --version                             Version information.\n")
+    writeToStdout(BOLD + "EXAMPLES" + RESET)
+    writeToStdout("    Convert files in the current directory to JPEG and to 300dpi:\n")
+    writeToStdout("        imageprep -f jpeg -r 300\n")
+    writeToStdout("    Scale to 128 x 128, keeping the originals:\n")
+    writeToStdout("        imageprep -s $SOURCE -d $DEST -a s 128 128 -k\n")
+    writeToStdout("    Scale to height of 1024, width in aspect, keeping the originals:\n")
+    writeToStdout("        imageprep -s $SOURCE -d $DEST -a s m 1024 -k\n")
+    writeToStdout("    Crop files to 1000 x 100, making intermediate directories, keeping originals:\n")
+    writeToStdout("        imageprep -s $SOURCE -d $DEST --createdirs -a c 1000 1000 -k\n")
+    writeToStdout("    Crop files to 1000 x source image height, keeping originals:\n")
+    writeToStdout("        imageprep -s $SOURCE -d $DEST -a c 1000 x -k\n")
+    writeToStdout("    Crop files to 500 x 500, anchored at top right:\n")
+    writeToStdout("        imageprep -s $SOURCE -d $DEST -a c 500 500 --cropfrom tr\n")
+    writeToStdout("    Pad to 2000 x 2000 with magenta, deleting the originals:\n")
+    writeToStdout("        imageprep -s $SOURCE -d $DEST -a p 2000 2000 -c ff00ff\n")
 }
 
 
@@ -869,7 +869,7 @@ func showHelp() {
 func showVersion() {
 
     showHeader()
-    writeToStderr("Copyright 2021, Tony Smith (@smittytone).\r\nSource code available under the MIT licence.")
+    writeToStdout("Copyright 2022, Tony Smith (@smittytone).\r\nSource code available under the MIT licence.")
 }
 
 
@@ -881,7 +881,7 @@ func showHeader() {
     let version: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String
     let build: String   = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as! String
     let name: String    = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as! String
-    writeToStderr("\(name) \(version) (\(build))")
+    writeToStdout("\(name) \(version) (\(build))")
 }
 
 
