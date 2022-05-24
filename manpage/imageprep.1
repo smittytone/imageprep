@@ -1,6 +1,8 @@
 .TH IMAGEPREP "1" "May 2022" "imageprep 6.3.4 (104)"
+
 .SH NAME
-imageprep
+imageprep \-\- Manipulate mutiple image files.
+
 .SH SYNOPSIS
 imageprep [\fB\-s\fR path] [\fB\-d\fR path] [\fB\-c\fR pad_colour]
           [\fB\-a\fR s scale_height scale_width] [\fB\-a\fR p pad_height pad_width]
@@ -50,7 +52,7 @@ imageprep [\fB\-s\fR path] [\fB\-d\fR path] [\fB\-c\fR pad_colour]
 .P
 \fB\-h\fR | \fB\-\-help\fR                           This help screen.
 .P
-\fB\-\-version\fR                             Version information.
+\fB\-\-version\fR                             Show \fBimageprep\fR Version information.
 
 .SH EXAMPLES
 
@@ -87,7 +89,6 @@ imageprep \fB\-s\fR $SOURCE \fB\-d\fR $DEST \fB\-a\fR c 500 500 \fB\-\-cropfrom\
 Pad to 2000 x 2000 with magenta, deleting the originals:
 .IP
 imageprep \fB\-s\fR $SOURCE \fB\-d\fR $DEST \fB\-a\fR p 2000 2000 \fB\-c\fR ff00ff
-.P
 
 .SH COPYRIGHT
 Code and design copyright © 2022, Tony Smith (\fB@smittytone\fR). Source code available under the MIT licence.
