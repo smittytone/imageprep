@@ -1,0 +1,93 @@
+.TH IMAGEPREP "1" "May 2022" "imageprep 6.3.4 (104)"
+.SH NAME
+imageprep
+.SH SYNOPSIS
+imageprep [\fB\-s\fR path] [\fB\-d\fR path] [\fB\-c\fR pad_colour]
+          [\fB\-a\fR s scale_height scale_width] [\fB\-a\fR p pad_height pad_width]
+          [\fB\-a\fR c crop_height crop_width] [\fB\-\-cropfrom point] [\fB\-r\fR] [\fB\-f\fR] [\fB\-k\fR]
+          [\fB\-o\fR] [\fB\-h\fR] [\fB\-\-info\fR] [\fB\-\-createdirs\fR] [\fB\-\-version\fR]
+
+.SH DESCRIPTION
+.PP
+\fBimageprep\fR is a macOS image preparation utility. Use it to crop, scale and/or pad one or mor images, convert them to other formats and/or set their print resolution (dots per inch). The image formats it supports are: PNG, JPEG, TIFF, PICT, BMP and GIF.
+
+.SH OPTIONS
+.TP
+\fB\-s\fR | \fB\-\-source\fR {path}                  The path to an image or a directory of images.
+                               Default: current working directory.
+.TP
+\fB\-d\fR | \fB\-\-destination\fR {path}             The path to the images. Default: source directory.
+.TP
+\fB\-a\fR | \fB\-\-action\fR {type} {width} {height} The crop/pad dimensions. The value of {type} is \fIs\fR (scale), \fIc\fR (crop) or \fIp\fR (pad).
+                               Provide absolute integer values for {width} or {height}, or the literal
+                               \fIx\fR to use the image's existing dimension, or the literal \fIm\fR to maintain
+                               the source image's aspect ratio.
+.TP
+\fB\-c\fR | \fB\-\-colour\fR {colour}                The padding colour in hex notation, eg. \fIA1B2C3\fR. Default: \fIFFFFFF\fR.
+.TP
+\fB\-\-cropfrom\fR {point}                    Anchor point for crop actions. Use \fItr\fR for top right, \fIcl\fR for centre left,
+                               \fIbr\fR for bottom right, etc.
+.TP
+\fB\-\-offset\fR {x} {y}                      Specify a top\-left co\-ordinate for the crop origin.
+                               This setting will be overridden by \fB\-\-cropfrom\fR.
+.TP
+\fB\-r\fR | \fB\-\-resolution\fR {dpi}               Set the image dpi, eg. \fI300\fR.
+.TP
+\fB\-f\fR | \fB\-\-format\fR {format}                Set the image format. See \fBDescription\fR for supported formats.
+.TP
+\fB\-o\fR | \fB\-\-overwrite\fR                      Overwrite an existing file. Without this, existing files will be kept.
+.TP
+\fB\-k\fR | \fB\-\-keep\fR                           Keep the source file. Without this, the source will be deleted.
+.TP
+\fB\-\-createdirs\fR                          Make target intermediate directories if they do not exist.
+.TP
+\fB\-\-info\fR                                Export basic image info: path, height, width, dpi and alpha.
+.TP
+\fB\-q\fR | \fB\-\-quiet\fR                          Silence output messages (errors excepted).
+.TP
+\fB\-h\fR | \fB\-\-help\fR                           This help screen.
+.TP
+\fB\-\-version\fR                             Version information.
+
+.SH EXAMPLES
+
+Convert files in the current directory to JPEG and to 300dpi:
+.IP
+imageprep \fB\-f\fR jpeg \fB\-r\fR 300
+.PP
+
+Scale to 128 x 128, keeping the originals:
+.IP
+imageprep \fB\-s\fR $SOURCE \fB\-d\fR $DEST \fB\-a\fR s 128 128 \fB\-k\fR
+.PP
+
+Scale to height of 1024, width in aspect, keeping the originals:
+.IP
+imageprep \fB\-s\fR $SOURCE \fB\-d\fR $DEST \fB\-a\fR s m 1024 \fB\-k\fR
+.PP
+
+Crop files to 1000 x 100, making intermediate directories, keeping originals:
+.IP
+imageprep \fB\-s\fR $SOURCE \fB\-d\fR $DEST \fB\-\-createdirs\fR \fB\-a\fR c 1000 1000 \fB\-k\fR
+.PP
+
+Crop files to 1000 x source image height, keeping originals:
+.IP
+imageprep \fB\-s\fR $SOURCE \fB\-d\fR $DEST \fB\-a\fR c 1000 x \fB\-k\fR
+.PP
+
+Crop files to 500 x 500, anchored at top right:
+.IP
+imageprep \fB\-s\fR $SOURCE \fB\-d\fR $DEST \fB\-a\fR c 500 500 \fB\-\-cropfrom\fR tr
+.PP
+
+Pad to 2000 x 2000 with magenta, deleting the originals:
+.IP
+imageprep \fB\-s\fR $SOURCE \fB\-d\fR $DEST \fB\-a\fR p 2000 2000 \fB\-c\fR ff00ff
+.PP
+
+.SH COPYRIGHT
+Code and design cpyright 2022, Tony Smith (@smittytone). Source code available under the MIT licence.
+
+.SH "SEE ALSO"
+https://smittytone.net/imageprep/index.html
