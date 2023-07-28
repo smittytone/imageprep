@@ -88,7 +88,7 @@ var doReformat: Bool            = false
 var doChangeResolution: Bool    = false
 var didChangeResolution: Bool   = false
 var doShowMessages: Bool        = true
-var doDeleteSource: Bool        = false         // Default to false in 6.4.0
+var doDeleteSource: Bool        = false         // Default to false in 7.0.0
 var actions: NSMutableArray     = NSMutableArray.init()
 // FROM 6.2.0
 var justInfo: Bool              = false
@@ -96,7 +96,7 @@ var cropFix: Int                = 4
 // FROM 6.3.0
 var cropLeft: Int               = -1
 var cropDown: Int               = -1
-// FROM 6.4.0
+// FROM 7.0.0
 var sourceFiles: [String]       = []
 
 // CLI argument management
@@ -199,7 +199,7 @@ func processDirectory(_ path: String) {
 /**
  Process a single source-image file.
  
- FROM 6.4.0 `file` is a full path including a file name
+ FROM 7.0.0 `file` is a full path including a file name
  
  - Parameters:
     - file: An image file path.
@@ -208,7 +208,7 @@ func processFile(_ file: String) {
 
     // Get the file extension
     let ext: String = (file.lowercased() as NSString).pathExtension
-    // FROM 6.4.0
+    // FROM 7.0.0
     let fileName = (file as NSString).lastPathComponent
     //let filePath = (file as NSString).deletingLastPathComponent
 
@@ -1047,7 +1047,7 @@ for argument in args {
                 doDeleteSource = false
             */
             case "-x":
-                // FROM 6.4.0
+                // FROM 7.0.0
                 doDeleteSource = true
             case "-o":
                 fallthrough
@@ -1070,7 +1070,7 @@ for argument in args {
                 showVersion()
                 exit(EXIT_SUCCESS)
             default:
-                // FROM 6.4.0
+                // FROM 7.0.0
                 // Check for a command -- other items can be saved as possible files
                 let range: NSRange = cmdRegExp.rangeOfFirstMatch(in: argument, options: [], range: NSMakeRange(0, argument.count))
                 if range.location != NSNotFound {
@@ -1101,7 +1101,7 @@ if actions.count == 0 && !doReformat && !doChangeResolution && !justInfo {
  * SOURCE PATH(S) CHECKS
  */
 
-// FROM 6.4.0
+// FROM 7.0.0
 // Check for any passed source files
 // NOTE These will override the -s flag value
 if sourceFiles.count > 0 {
@@ -1200,7 +1200,7 @@ if !destIsdirectory.boolValue {
         reportErrorAndExit("Source (dirctory) and destination (file) are mismatched")
     }
 
-    // FROM 6.4.0
+    // FROM 7.0.0
     // We can only accept a destination file if there's only one file on the list
     if sourceFiles.count > 1 {
         reportErrorAndExit("Source files require a directory destination")
@@ -1216,7 +1216,7 @@ if sourcePath == destPath && (sourceFile == destFile || (sourceFile != "" && des
     doDeleteSource = false
 }
 
-// FROM 6.4.0
+// FROM 7.0.0
 // Make sure we don't delete single files if the named destination file matches, or
 // the destination directory is the same as the source
 if sourceFiles.count == 1 {
@@ -1229,7 +1229,7 @@ if sourceFiles.count == 1 {
     }
 }
 
-// FROM 6.4.0
+// FROM 7.0.0
 // Make sure we don't delete added files if the named destination is
 // the same directory as the source. The files may be in very different
 // locations, so for now if one's source matches, don't delete any of them
@@ -1281,18 +1281,18 @@ if sourceIsdirectory.boolValue {
 
         // Otherwise proceess each item - 'processFile()' determines suitability
         for file: String in contents.sorted() {
-            // FROM 6.4.0 `processFile()` expects a full path
+            // FROM 7.0.0 `processFile()` expects a full path
             processFile(sourcePath + "/" + file)
         }
     } catch {
         reportErrorAndExit("Unable to get contents of source directory \(sourcePath)")
     }
 } else {
-    // FROM 6.4.0
+    // FROM 7.0.0
     // Run through source files added as arguments
     if sourceFiles.count > 0 {
         for file: String in sourceFiles {
-            // FROM 6.4.0 `processFile()` expects a full path
+            // FROM 7.0.0 `processFile()` expects a full path
             processFile(file)
         }
     }
