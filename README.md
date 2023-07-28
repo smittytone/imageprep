@@ -1,4 +1,4 @@
-# imageprep 6.3.4 #
+# imageprep 6.4.0 #
 
 *imageprep* is an image preparation utility for macOS. It is essentially a wrapper for *sips*.
 
@@ -13,7 +13,8 @@ imageprep [--source path] [--destination path] \
           [--colour pad_colour] [--resolution dpi_value] \
           [--format format_type] [--keep] [--overwrite] \
           [--info] [--createdirs] \
-          [--help] [--version]
+          [--help] [--version] \
+          {/path/to/file} ... {path/to/file}
 ```
 
 For more detailed guidance on using *imageprep*, please [see this page](https://smittytone.net/imageprep/).
@@ -60,8 +61,14 @@ From version 6.3.0, you can specify crop anchors as x and y co-ordinates: this i
 
 Please note that if you specify a crop anchor point using `--cropfrom`, it will override any offset value you specify.
 
+## Contributions ##
+
+Contributions are welcome, but pull requestss can only be accepted when they target the `develop` branch. PRs targetting `main` will be rejected.
+
 ## Release Notes ##
 
+- 6.4.0 *Unreleased*
+    - Support the loading of individual files, not just a directory.
 - 6.3.4 *25 May 2022*
     - Add `man` page.
 - 6.3.3 *23 July 2021*
@@ -98,7 +105,7 @@ Please note that if you specify a crop anchor point using `--cropfrom`, it will 
 
 ## Copyright ##
 
-*imageprep* is copyright &copy; 2022, Tony Smith.
+*imageprep* is copyright &copy; 2023, Tony Smith.
 
 ## Licence ##
 
