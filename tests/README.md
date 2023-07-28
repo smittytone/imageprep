@@ -1,11 +1,11 @@
 # imageprep Tests #
 
-The script `imagepreptest.zsh` performs a sequence of tests on an *imageprep* binary. It uses the image files in the `source` directory.
+The script `testimageprep.zsh` performs a sequence of tests on an *imageprep* binary. It uses the image files in the `source` directory.
 
 ### Usage ###
 
 1. `cd {path/to/imageprep/tests}`
-1. `./imagepreptest.zsh {path/to/imageprep/binary}`
+1. `./testimageprep.zsh {path/to/imageprep/binary}`
 
 ### Outcome ###
 

@@ -40,7 +40,7 @@ final class ImageInfo {
     // MARK: - Constants
     let BASE_DPI = 72.0
 
-    
+
     // MARK: - Properties
     var width: Int = -1
     var height: Int = -1

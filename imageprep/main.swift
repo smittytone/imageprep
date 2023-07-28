@@ -88,7 +88,7 @@ var doReformat: Bool            = false
 var doChangeResolution: Bool    = false
 var didChangeResolution: Bool   = false
 var doShowMessages: Bool        = true
-var doDeleteSource: Bool        = true
+var doDeleteSource: Bool        = false         // Default to false in 6.4.0
 var actions: NSMutableArray     = NSMutableArray.init()
 // FROM 6.2.0
 var justInfo: Bool              = false
@@ -390,7 +390,7 @@ func removeFile(_ path: String) -> Bool {
     } catch {
         return false
     }
-    
+
     return true
 }
 
@@ -420,7 +420,7 @@ func runSips(_ args: [String]) {
 
     // Block until the task has completed (short tasks ONLY)
     task.waitUntilExit()
-    
+
     // Look for and deal with execution issues
     if !task.isRunning {
         if (task.terminationStatus != 0) {
@@ -454,11 +454,11 @@ func runSips(_ args: [String]) {
  - Returns: The offset value as a float.
  */
 func sipsOffsetfix(_ offsetValue: Int) -> Float {
-    
+
     if offsetValue == 0 {
         return 0.0001
     }
-    
+
     return Float(offsetValue)
 }
 
@@ -555,7 +555,7 @@ func writeToStdout(_ output: String) {
     - message:    The string to be written.
  */
 func writeOut(_ fileHandle: FileHandle, _ message: String) {
-    
+
     let outputString: String = message + "\r\n"
     if let outputData: Data = outputString.data(using: .utf8) {
         fileHandle.write(outputData)
@@ -720,7 +720,7 @@ func addAction(_ action: String, _ width: Int, _ height: Int) {
         reportWarning("Action \(theAction) will not change the image -- ignoring")
         return
     }
-    
+
     // Add the action to the list of those we'll perform
     actions.add(Action.init(action, width, height, padColour))
 }
@@ -800,13 +800,13 @@ func processCropFix(_ arg: String) -> Int {
  - Returns: The anchor offset as an integer.
  */
 func processCropOffset(_ arg: String) -> Int {
-    
+
     let workArg: String = arg.lowercased()
     let value: Int = Int(workArg) ?? -99
     if value < 0 {
         reportErrorAndExit("Invalid crop offset: \(arg)")
     }
-    
+
     return value
 }
 
@@ -828,7 +828,7 @@ func showHelp() {
     writeToStdout("\nA macOS image preparation utility.\r\n" + ITALIC + "https://smittytone.net/imageprep/index.html\n" + RESET)
     writeToStdout(BOLD + "USAGE" + RESET + "\n    imageprep [-s path] [-d path] [-c pad_colour]")
     writeToStdout("              [-a s scale_height scale_width] [-a p pad_height pad_width]")
-    writeToStdout("              [-a c crop_height crop_width] [--cropfrom point] [-r] [-f] [-k]")
+    writeToStdout("              [-a c crop_height crop_width] [--cropfrom point] [-r] [-f] [-x]")
     writeToStdout("              [-o] [-h] [--info] [--createdirs] [--version]\n")
     writeToStdout("    Image formats supported: \(formats).\n")
     writeToStdout(BOLD + "OPTIONS" + RESET)
@@ -847,7 +847,7 @@ func showHelp() {
     writeToStdout("    -r | --resolution  {dpi}                   Set the image dpi, eg. 300.")
     writeToStdout("    -f | --format      {format}                Set the image format (see above).")
     writeToStdout("    -o | --overwrite                           Overwrite an existing file. Without this, existing files will be kept.")
-    writeToStdout("    -k | --keep                                Keep the source file. Without this, the source will be deleted.")
+    writeToStdout("    -x                                         Delete the source file. Without this, the source will be retained.")
     writeToStdout("         --createdirs                          Make target intermediate directories if they do not exist.")
     writeToStdout("         --info                                Export basic image info: path, height, width, dpi and alpha.")
     writeToStdout("    -q | --quiet                               Silence output messages (errors excepted).")
@@ -857,17 +857,17 @@ func showHelp() {
     writeToStdout("    Convert files in the current directory to JPEG and to 300dpi:\n")
     writeToStdout("        imageprep -f jpeg -r 300\n")
     writeToStdout("    Scale to 128 x 128, keeping the originals:\n")
-    writeToStdout("        imageprep -s $SOURCE -d $DEST -a s 128 128 -k\n")
+    writeToStdout("        imageprep -s $SOURCE -d $DEST -a s 128 128\n")
     writeToStdout("    Scale to height of 1024, width in aspect, keeping the originals:\n")
-    writeToStdout("        imageprep -s $SOURCE -d $DEST -a s m 1024 -k\n")
+    writeToStdout("        imageprep -s $SOURCE -d $DEST -a s m 1024\n")
     writeToStdout("    Crop files to 1000 x 100, making intermediate directories, keeping originals:\n")
-    writeToStdout("        imageprep -s $SOURCE -d $DEST --createdirs -a c 1000 1000 -k\n")
+    writeToStdout("        imageprep -s $SOURCE -d $DEST --createdirs -a c 1000 1000\n")
     writeToStdout("    Crop files to 1000 x source image height, keeping originals:\n")
-    writeToStdout("        imageprep -s $SOURCE -d $DEST -a c 1000 x -k\n")
-    writeToStdout("    Crop files to 500 x 500, anchored at top right:\n")
-    writeToStdout("        imageprep -s $SOURCE -d $DEST -a c 500 500 --cropfrom tr\n")
+    writeToStdout("        imageprep -s $SOURCE -d $DEST -a c 1000 x\n")
+    writeToStdout("    Crop files to 500 x 500, anchored at top right, deleting the originals:\n")
+    writeToStdout("        imageprep -s $SOURCE -d $DEST -a c 500 500 --cropfrom tr -x\n")
     writeToStdout("    Pad to 2000 x 2000 with magenta, deleting the originals:\n")
-    writeToStdout("        imageprep -s $SOURCE -d $DEST -a p 2000 2000 -c ff00ff\n")
+    writeToStdout("        imageprep -s $SOURCE -d $DEST -a p 2000 2000 -c ff00ff -x\n")
 }
 
 
@@ -948,7 +948,7 @@ for argument in args {
         if range.location != NSNotFound {
             reportErrorAndExit("Missing value for \(prevArg)")
         }
-        
+
         switch argValue {
             case 1:
                 sourcePath = argument
@@ -1040,10 +1040,15 @@ for argument in args {
                 fallthrough
             case "--quiet":
                 doShowMessages = false
+            /*
             case "-k":
                 fallthrough
             case "--keep":
                 doDeleteSource = false
+            */
+            case "-x":
+                // FROM 6.4.0
+                doDeleteSource = true
             case "-o":
                 fallthrough
             case "--overwrite":
@@ -1267,7 +1272,7 @@ if sourceIsdirectory.boolValue {
     // and then process all the files, one by one
     do {
         let contents: [String] = try fm.contentsOfDirectory(atPath: sourcePath)
-        
+
         // If there are no contents, bail
         if contents.count == 0 {
             report("Source directory \(sourcePath) is empty")

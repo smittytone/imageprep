@@ -52,11 +52,11 @@ final class Action {
          _ width: Int = -1,
          _ height: Int = -1,
          _ colour: String = "FFFFFF") {
-        
+
         self.type = type
         self.width = width
         self.height = height
         self.colour = colour
     }
-    
+
 }

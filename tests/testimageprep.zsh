@@ -70,7 +70,7 @@ fi
 
 # TEST -- scale images, create intermediate directories
 echo -n "Running tests...\nTEST $test_num..."
-result=$("$test_app" -k -s "$image_src" -d test1 --createdirs -a s 100 100 2>&1)
+result=$("$test_app" -s "$image_src" -d test1 --createdirs -a s 100 100 2>&1)
 
 # Make sure sub-directory created
 check_dir_exists test1 $test_num
@@ -88,7 +88,7 @@ pass
 
 # TEST -- crop images, create intermediate directories
 new_test
-result=$("$test_app" -k -s "$image_src" -d test1 --createdirs -a c 200 100 2>&1)
+result=$("$test_app" -s "$image_src" -d test1 --createdirs -a c 200 100 2>&1)
 
 # Make sure sub-directory created
 check_dir_exists test1 $test_num
@@ -113,7 +113,7 @@ pass
 
 # TEST -- bad DPI value spotted
 new_test
-result=$("$test_app" -k -s "$image_src" -d test1 --createdirs -r 0 2>&1)
+result=$("$test_app" -s "$image_src" -d test1 --createdirs -r 0 2>&1)
 
 # Make sure sub-directory NOT created
 check_dir_not_exists test1 $test_num
@@ -128,7 +128,7 @@ pass
 
 # TEST -- bad colour value (too long) spotted
 new_test
-result=$("$test_app" -k -s "$image_src" -d test1 --createdirs -c 012345566789 2>&1)
+result=$("$test_app" -s "$image_src" -d test1 --createdirs -c 012345566789 2>&1)
 
 # Make sure sub-directory NOT created
 check_dir_not_exists test1 $test_num
@@ -144,7 +144,7 @@ pass
 
 # TEST -- bad colour value (not hex) spotted
 new_test
-result=$("$test_app" -k -s "$image_src" -d test1 --createdirs -c gg01aa 2>&1)
+result=$("$test_app" -s "$image_src" -d test1 --createdirs -c gg01aa 2>&1)
 
 # Make sure sub-directory NOT created
 check_dir_not_exists test1 $test_num
@@ -159,7 +159,7 @@ pass
 
 # TEST -- bad format value spotted
 new_test
-result=$("$test_app" -k -s "$image_src" -d test1 --createdirs -f biff 2>&1)
+result=$("$test_app" -s "$image_src" -d test1 --createdirs -f biff 2>&1)
 
 # Make sure sub-directory NOT created
 check_dir_not_exists test1 $test_num
@@ -174,7 +174,7 @@ pass
 
 # TEST -- bad switch (long) spotted
 new_test
-result=$("$test_app" -k -s "$image_src" -d test1 --createdirs --jump 2>&1)
+result=$("$test_app" -s "$image_src" -d test1 --createdirs --jump 2>&1)
 
 # Make sure sub-directory NOT created
 check_dir_not_exists test1 $test_num
@@ -189,7 +189,7 @@ pass
 
 # TEST -- bad switch (short) spotted
 new_test
-result=$("$test_app" -k -s "$image_src" -d test1 --createdirs -z 2>&1)
+result=$("$test_app" -s "$image_src" -d test1 --createdirs -z 2>&1)
 
 # Make sure sub-directory NOT created
 check_dir_not_exists test1 $test_num
@@ -206,7 +206,7 @@ pass
 new_test
 mkdir test5
 cd test5
-result=$("$test_app" -k -a s 100 100 2>&1)
+result=$("$test_app" -a s 100 100 2>&1)
 
 # Check for error message (empty dir) in output
 # NOTE use 'No files converted' for .enumerate() ; 'is empty' for .contentsOfDirectory()
@@ -219,7 +219,7 @@ pass
 
 # TEST -- missing source directory spotted
 new_test
-result=$("$test_app" -k -s test6 -a s 100 100 2>&1)
+result=$("$test_app" -s test6 -a s 100 100 2>&1)
 
 # Check for error message (dir does not exist) in output
 result=$(echo -e "$result" | grep 'cannot be found')
@@ -231,7 +231,7 @@ pass
 
 # TEST -- missing target directory spotted, no intermediates created
 new_test
-result=$("$test_app" -k -s "$image_src" -d test7 -a s 100 100 2>&1)
+result=$("$test_app" -s "$image_src" -d test7 -a s 100 100 2>&1)
 # Make sure sub-directory was not created
 check_dir_not_exists test7 $test_num
 
@@ -245,7 +245,7 @@ pass
 
 # TEST -- use of a relative path
 new_test
-result=$("$test_app" -k -s "../source" -d test8 --createdirs -a s 100 100 2>&1)
+result=$("$test_app" -s "../source" -d test8 --createdirs -a s 100 100 2>&1)
 
 # Make sure sub-directory created
 check_dir_exists test8 $test_num
@@ -261,7 +261,7 @@ pass
 
 # TEST -- use a relative path, convert jpg -> png, create intermediate dirs, scale images
 new_test
-result=$("$test_app" -k -s "../source" -d test9 --createdirs -a s 100 100 -f png 2>&1)
+result=$("$test_app" -s "../source" -d test9 --createdirs -a s 100 100 -f png 2>&1)
 
 # Make sure sub-directory created
 check_dir_exists test9 $test_num
@@ -286,7 +286,7 @@ pass
 new_test
 mkdir test10
 cp "source/Out of this World.jpg" "test10/oow.jpg"
-result=$("$test_app" -s test10/oow.jpg -d test10a --createdirs -a s 100 100 2>&1)
+result=$("$test_app" -x -s test10/oow.jpg -d test10a --createdirs -a s 100 100 2>&1)
 
 # Make sure sub-directory created
 check_dir_exists test10a $test_num
@@ -301,7 +301,7 @@ if [[ "$result" != "  pixelHeight: 100" ]]; then
     fail "Scale to 100 x 100 failed" $test_num $LINENO
 fi
 
-# Make sure source file deleted (no -k switch)
+# Make sure source file deleted (-x switch)
 check_file_not_exists test10/oow.jpg $test_num
 
 rm -rf test10
@@ -311,7 +311,7 @@ pass
 # TEST -- source image deleted when it should not be
 new_test
 cp "source/Out of this World.jpg" oow.jpg
-result=$("$test_app" -s oow.jpg -a s 150 150 2>&1)
+result=$("$test_app" -x -s oow.jpg -a s 150 150 2>&1)
 
 # Make sure target file created
 check_file_exists oow.jpg $test_num
@@ -328,7 +328,7 @@ pass
 
 # TEST -- source and dest are mismatched
 new_test
-result=$("$test_app" -s "$image_src" -d "test.jpg" --createdirs -a s 150 150 2>&1)
+result=$("$test_app" -x -s "$image_src" -d "test.jpg" --createdirs -a s 150 150 2>&1)
 
 # Make sure the mismatch was spotted
 result=$(echo -e "$result" | grep 'mismatched')
@@ -342,7 +342,7 @@ pass
 new_test
 test_dir="test$test_num"
 mkdir "$test_dir"
-result=$("$test_app" -s "$image_src" -d "$test_dir" -a s 0 150 -k 2>&1)
+result=$("$test_app" -s "$image_src" -d "$test_dir" -a s 0 150 2>&1)
 
 # Make sure the mismatch was spotted
 result=$(echo -e "$result" | grep 'Invalid scale width')
@@ -354,7 +354,7 @@ pass
 
 # TEST -- check bad scale height value
 new_test
-result=$("$test_app" -s "$image_src" -d "$test_dir" -a s 150 ZZZ -k 2>&1)
+result=$("$test_app" -s "$image_src" -d "$test_dir" -a s 150 ZZZ 2>&1)
 
 # Make sure the mismatch was spotted
 result=$(echo -e "$result" | grep 'Invalid scale height')
@@ -366,7 +366,7 @@ pass
 
 # TEST -- check bad crop width value
 new_test
-result=$("$test_app" -s "$image_src" -d "$test_dir" -a c AAA ZZZ -k 2>&1)
+result=$("$test_app" -s "$image_src" -d "$test_dir" -a c AAA ZZZ 2>&1)
 
 # Make sure the mismatch was spotted
 result=$(echo -e "$result" | grep 'Invalid crop width')
@@ -378,7 +378,7 @@ pass
 
 # TEST -- check bad crop height value
 new_test
-result=$("$test_app" -s "$image_src" -d "$test_dir" -a c 150 '£' -k 2>&1)
+result=$("$test_app" -s "$image_src" -d "$test_dir" -a c 150 '£' 2>&1)
 
 # Make sure the mismatch was spotted
 result=$(echo -e "$result" | grep 'Invalid crop height')
@@ -390,7 +390,7 @@ pass
 
 # TEST -- check bad pad width value
 new_test
-result=$("$test_app" -s "$image_src" -d "$test_dir" -a p A B -k 2>&1)
+result=$("$test_app" -s "$image_src" -d "$test_dir" -a p A B 2>&1)
 
 # Make sure the mismatch was spotted
 result=$(echo -e "$result" | grep 'Invalid pad width')
@@ -402,7 +402,7 @@ pass
 
 # TEST -- check bad pad height value
 new_test
-result=$("$test_app" -s "$image_src" -d "$test_dir" -a p 1 K -k 2>&1)
+result=$("$test_app" -s "$image_src" -d "$test_dir" -a p 1 K 2>&1)
 
 # Make sure the mismatch was spotted
 result=$(echo -e "$result" | grep 'Invalid pad height')
@@ -417,7 +417,7 @@ pass
 new_test
 test_file="zzz.png"
 touch "$test_file"
-result=$("$test_app" -s "$test_file" -a s 100 100 -k 2>&1)
+result=$("$test_app" -s "$test_file" -a s 100 100 2>&1)
 
 # Make sure the mismatch was spotted
 result=$(echo -e "$result" | grep 'skipping')
@@ -430,7 +430,7 @@ pass
 
 # TEST -- check for bad action
 new_test
-result=$("$test_app" -s "$image_src" -a z 100 100 -k 2>&1)
+result=$("$test_app" -s "$image_src" -a z 100 100 2>&1)
 
 # Make sure the mismatch was spotted
 result=$(echo -e "$result" | grep 'Invalid action selected')
@@ -442,7 +442,7 @@ pass
 
 # TEST -- check for ignorable action
 new_test
-result=$("$test_app" -s "$image_src" -a s x x -k 2>&1)
+result=$("$test_app" -s "$image_src" -a s x x 2>&1)
 
 # Make sure the mismatch was spotted
 result=$(echo -e "$result" | grep 'No actions specified')
@@ -455,7 +455,7 @@ pass
 # TEST -- check for scale with raw image value (height)
 new_test
 mkdir "test$test_num"
-result=$("$test_app" -s "$image_src" -d "test$test_num" -a s 1000 x -k 2>&1)
+result=$("$test_app" -s "$image_src" -d "test$test_num" -a s 1000 x 2>&1)
 
 # Make sure random image is 1000 x 1500 high
 result1=$(sips "test$test_num/BBC Space Themes.jpg" -g pixelHeight -1)
@@ -472,7 +472,7 @@ pass
 # TEST -- check for scale with raw image value (width)
 new_test
 mkdir "test$test_num"
-result=$("$test_app" -s "$image_src" -d "test$test_num" -a s x 800 -k 2>&1)
+result=$("$test_app" -s "$image_src" -d "test$test_num" -a s x 800 2>&1)
 
 # Make sure random image is 1000 x 1500 high
 result1=$(sips "test$test_num/BBC Space Themes.jpg" -g pixelHeight -1)
@@ -488,7 +488,7 @@ pass
 
 # TEST -- check for scale with aspect-ratio set image value (width)
 new_test
-result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a s 130 m -k 2>&1)
+result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a s 130 m 2>&1)
 
 # Make sure random image is 130 x 160 high
 result1=$(sips 2000AD_0086_24.jpg -g pixelHeight -1)
@@ -504,7 +504,7 @@ pass
 
 # TEST -- check for unknown crop fix point
 new_test
-result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a c 130 m --cropfrom gg -k 2>&1)
+result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a c 130 m --cropfrom gg 2>&1)
 
 # Make sure the mismatch was spotted
 result=$(echo -e "$result" | grep 'Invalid crop anchor')
@@ -516,7 +516,7 @@ pass
 
 # TEST -- check for crop to bottom left
 new_test
-result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a c 650 800 --cropfrom br -k 2>&1)
+result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a c 650 800 --cropfrom br 2>&1)
 
 # Make sure random image is 130 x 160 high
 result1=$(sips 2000AD_0086_24.jpg -g pixelHeight -1)
@@ -528,11 +528,11 @@ if [[ "$result1" != "  pixelHeight: 800" && "$result2" != "  pixelWidth: 650" ]]
 fi
 
 pass
-echo "NOTE -- Manually verify 2000AD_0086_24.jpg is a bottom-right crop"
+echo "NOTE Manually verify 2000AD_0086_24.jpg is a bottom-right crop"
 
 # TEST -- check crop offset
 new_test
-result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a c 229 231 --offset 285 97 -k -d 2000AD_0086_24b.jpg 2>&1)
+result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a c 229 231 --offset 285 97 -d 2000AD_0086_24b.jpg 2>&1)
 
 # Make sure image is 229 x 231
 result1=$(sips 2000AD_0086_24b.jpg -g pixelHeight -1)
@@ -544,11 +544,11 @@ if [[ "$result1" != "  pixelHeight: 231" && "$result2" != "  pixelWidth: 229" ]]
 fi
 
 pass
-echo "NOTE -- Manually verify 2000AD_0086_24b.jpg is a Johnny Alpha face crop"
+echo "NOTE Manually verify 2000AD_0086_24b.jpg is a Johnny Alpha face crop"
 
 # TEST -- check for bad offset
 new_test
-result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a c 229 231 --offset -285 97 -k -d 2000AD_0086_24c.jpg 2>&1)
+result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a c 229 231 --offset -285 97 -d 2000AD_0086_24c.jpg 2>&1)
 
 # Make sure bad offset trapped
 result=$(echo -e "$result" | grep 'Invalid crop offset')
@@ -560,7 +560,7 @@ pass
 
 # TEST -- check for bad arg trapping
 new_test
-result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a c 229 --offset -285 97 -k -d 2000AD_0086_24d.jpg 2>&1)
+result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a c 229 --offset -285 97 -d 2000AD_0086_24d.jpg 2>&1)
 
 # Make sure bad offset trapped
 result=$(echo -e "$result" | grep 'Missing value for')
@@ -572,7 +572,7 @@ pass
 
 # TEST -- check for zero offset adjustments
 new_test
-result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a c 1300 300 --offset 0 100 -k -d 2000AD_0086_24e.jpg 2>&1)
+result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a c 1300 300 --offset 0 100 -d 2000AD_0086_24e.jpg 2>&1)
 
 # Make sure image os 1300 x 300
 result1=$(sips 2000AD_0086_24e.jpg -g pixelHeight -1)
@@ -584,7 +584,7 @@ if [[ "$result1" != "  pixelHeight: 300" && "$result2" != "  pixelWidth: 1300" ]
 fi
 
 pass
-echo "NOTE -- Manually verify 2000AD_0086_24e.jpg is a strip crop"
+echo "NOTE Manually verify 2000AD_0086_24e.jpg is a strip crop"
 
 echo "ALL TESTS PASSED"
 echo "DON'T FORGET TO DELETE TEST OUTPUT FILES BEFORE RE-RUNNING"
