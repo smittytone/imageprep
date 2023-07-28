@@ -586,5 +586,29 @@ fi
 pass
 echo "NOTE Manually verify 2000AD_0086_24e.jpg is a strip crop"
 
+# TEST -- check for bad switch trapping #1
+new_test
+result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a c 100 100 --offset 10 10 -d 2000AD_0086_24d.jpg -k 2>&1)
+
+# Make sure bad offset trapped
+result=$(echo -e "$result" | grep 'Unknown argument:')
+if [[ -z "$result" ]]; then
+    fail "Missing value not trapped" $test_num $LINENO
+fi
+
+pass
+
+# TEST -- check for bad switch trapping #2
+new_test
+result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a c 100 100 --offset 10 10 -d 2000AD_0086_24d.jpg --keep 2>&1)
+
+# Make sure bad offset trapped
+result=$(echo -e "$result" | grep 'Unknown argument:')
+if [[ -z "$result" ]]; then
+    fail "Missing value not trapped" $test_num $LINENO
+fi
+
+pass
+
 echo "ALL TESTS PASSED"
 echo "DON'T FORGET TO DELETE TEST OUTPUT FILES BEFORE RE-RUNNING"
