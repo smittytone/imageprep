@@ -2,6 +2,12 @@
 
 *imageprep* is an image preparation utility for macOS. It is essentially a wrapper for *sips*.
 
+## Breaking Change
+
+From 7.0.0, *imageprep* no longer deletes source files by default as they are processed. For this reason, the `-k` and `--keep` switches have been removedand their use will throw an error.
+
+To enforce source-file deletion, please use the new `-x` switch.
+
 ## Usage
 
 ```
@@ -34,7 +40,7 @@ For more detailed guidance on using *imageprep*, please [see this page](https://
 |      | `--createdirs` |  | Create intermediate directories to the destination, if needed. Default: do not create |
 | `-o` | `--overwrite` |  | Overwrite an existing file. Without this, existing files will be kept |
 |      | `--info` |  | Output image information in machine-readable form: path, width, height, resolution and alpha state |
-| `-k` | `--keep` |  | Keep the source file. Without this, the source will be deleted |
+| `-x` |  |  | Delete the source file. Without this, the source will be retained |
 | `-q` | `--quiet` |  | Silence output messages (errors excepted) |
 | `-h` | `--help` |  | Show help information |
 |      | `--version` |  | Show version information |
@@ -57,7 +63,7 @@ You can specify an anchor point for crop operations. Use the `--cropfrom` switch
 | **Centre** | `3` | N/A | `5` |
 | **Bottom** | `6` | `7` | `8` |
 
-From version 6.3.0, you can specify crop anchors as x and y co-ordinates: this is the co-ordinate of the top left point of the retained area. For example, with a 1920 x 1080 image, to crop out all but a 500 by 400 area in the top left of the image, you would specify 500 and 400 as your width and height values, and 10 and 20 as your offset co-ordinates. Offset values cannot be negative, and values beyond the dimensions of the source image will be ignored.
+You can specify crop anchors as x and y co-ordinates: this is the co-ordinate of the top left point of the retained area. For example, with a 1920 x 1080 image, to crop out all but a 500 by 400 area in the top left of the image, you would specify 500 and 400 as your width and height values, and 10 and 20 as your offset co-ordinates. Offset values cannot be negative, and values beyond the dimensions of the source image will be ignored.
 
 Please note that if you specify a crop anchor point using `--cropfrom`, it will override any offset value you specify.
 
