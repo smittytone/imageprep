@@ -2,7 +2,7 @@
     imageprep
     main.swift
 
-    Copyright © 2022 Tony Smith. All rights reserved.
+    Copyright © 2023 Tony Smith. All rights reserved.
 
     MIT License
     Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -96,6 +96,8 @@ var cropFix: Int                = 4
 // FROM 6.3.0
 var cropLeft: Int               = -1
 var cropDown: Int               = -1
+// FROM 6.4.0
+var sourceFiles: [String]       = []
 
 // CLI argument management
 var argValue: Int               = 0
@@ -197,16 +199,18 @@ func processDirectory(_ path: String) {
 /**
  Process a single source-image file.
  
- **Note** `file` contains a file name, not a path, so we need to add
- `sourcePath` to it when working at file level.
+ FROM 6.4.0 `file` is a full path including a file name
  
  - Parameters:
-    - file: An image file name.
+    - file: An image file path.
  */
 func processFile(_ file: String) {
 
     // Get the file extension
     let ext: String = (file.lowercased() as NSString).pathExtension
+    // FROM 6.4.0
+    let fileName = (file as NSString).lastPathComponent
+    //let filePath = (file as NSString).deletingLastPathComponent
 
     // Only proceed if we have a file of the correct extension
     if !SUPPORTED_TYPES.contains(ext) { return }
@@ -214,27 +218,31 @@ func processFile(_ file: String) {
     // Determine the file's output file path
     var outputFile: String = destPath + "/"
     if destIsdirectory.boolValue {
-        // Target's a directory, so add the file name
-        outputFile += file
+        // Target is a directory, so add the file name
+        outputFile += fileName
     } else {
         // Destination is a specified file
         outputFile += destFile
     }
 
-    // Get the full source image path
-    let inputFile: String = "\(sourcePath)/\(file)"
+    /* Get the full source image path
+    var inputFile: String = "\(file)"
+    if sourcePath.count > 0 {
+        inputFile = "\(sourcePath)/" + inputFile
+    }
+     */
 
     // Check the source image by loading it and getting image info
-    let imageInfo: ImageInfo? = getImageInfo(inputFile)
+    let imageInfo: ImageInfo? = getImageInfo(file)
     if imageInfo == nil {
-        reportWarning("File \(file) has no content -- skipping")
+        reportWarning("File \(fileName) has no content -- skipping")
         return
     }
 
     if justInfo {
         // User just wants file data, so output it and exit
         let hasAlpha: String = imageInfo!.hasAlpha ? "alpha" : "no-alpha"
-        writeToStdout("\(inputFile) \(imageInfo!.width) \(imageInfo!.height) \(imageInfo!.dpi) \(imageInfo!.aspectRatio) " + hasAlpha)
+        writeToStdout("\(file) \(imageInfo!.width) \(imageInfo!.height) \(imageInfo!.dpi) \(imageInfo!.aspectRatio) " + hasAlpha)
         return
     }
 
@@ -245,11 +253,11 @@ func processFile(_ file: String) {
     // check the source image type first
     if ext == "tif" || ext == "tiff" {
         // Source image IS a TIFF...
-        if inputFile != outputFile {
+        if file != outputFile {
             // ...but it's not at the same location as the output file,
             // so just copy it across
             do {
-               try fm.copyItem(at: URL.init(fileURLWithPath: inputFile),
+               try fm.copyItem(at: URL.init(fileURLWithPath: file),
                                to: URL.init(fileURLWithPath: tmpFile))
             } catch {
                 reportWarning("Could not write \(outputFile) -- skipping")
@@ -258,7 +266,7 @@ func processFile(_ file: String) {
         }
     }  else {
         // The source is not a TIFF, so just create the temp file
-        runSips([inputFile, "-s", "format", "tiff", "--out", tmpFile])
+        runSips([file, "-s", "format", "tiff", "--out", tmpFile])
     }
 
     // First process actions on the temporary work file
@@ -353,9 +361,9 @@ func processFile(_ file: String) {
 
     // Remove the source file, if requested
     if doDeleteSource {
-        let success: Bool = removeFile(inputFile)
+        let success: Bool = removeFile(file)
         if !success {
-            reportWarning("Could not delete source file \(inputFile) after processing")
+            reportWarning("Could not delete source file \(fileName) after processing")
         }
     }
 
@@ -363,7 +371,7 @@ func processFile(_ file: String) {
     fileCount += 1
 
     // Report process
-    report("Image \(inputFile) processed to \(outputFile)...")
+    report("Image \(file) processed to \(outputFile)...")
 }
 
 
@@ -590,8 +598,8 @@ func processColour(_ colourString: String) -> String {
 
     // Check it's actually hex (or makes sense as hex)
     let scanner: Scanner = Scanner.init(string: workColour)
-    var dummy: UInt32 = 0
-    if !scanner.scanHexInt32(&dummy) {
+    var dummy: UInt64 = 0
+    if !scanner.scanHexInt64(&dummy) {
         reportErrorAndExit("Invalid hex colour value supplied \(colourString)")
     }
 
@@ -869,7 +877,7 @@ func showHelp() {
 func showVersion() {
 
     showHeader()
-    writeToStdout("Copyright 2022, Tony Smith (@smittytone).\r\nSource code available under the MIT licence.")
+    writeToStdout("Copyright © 2023, Tony Smith (@smittytone).\r\nSource code available under the MIT licence.")
 }
 
 
@@ -921,6 +929,10 @@ if args.count == 1 {
     exit(EXIT_SUCCESS)
 }
 
+// FROM 6.3.0
+// Use a regex so negative values are not mistaken for switches
+let cmdRegExp: NSRegularExpression = try! NSRegularExpression.init(pattern: "^[-]+[a-zA-Z]", options: [])
+
 for argument in args {
 
     // Ignore the first comand line argument
@@ -932,62 +944,60 @@ for argument in args {
     // Are we expecting a value? If so 'argValue' is not zero
     if argValue != 0 {
         // Make sure we have a value to read, ie. the current arg is not a switch or flag
-        // FROM 6.3.0 -- use regex so negative values are not mistaken for switches
-        let regExp: NSRegularExpression = try! NSRegularExpression.init(pattern: "^[-]+[a-zA-Z]", options: [])
-        let range: NSRange = regExp.rangeOfFirstMatch(in: argument, options: [], range: NSMakeRange(0, argument.count))
+        let range: NSRange = cmdRegExp.rangeOfFirstMatch(in: argument, options: [], range: NSMakeRange(0, argument.count))
         if range.location != NSNotFound {
             reportErrorAndExit("Missing value for \(prevArg)")
         }
         
         switch argValue {
-        case 1:
-            sourcePath = argument
-        case 2:
-            destPath = argument
-        case 3:
-            padColour = processColour(argument)
-        case 4:
-            dpi = Float(argument) ?? 150.0
-            if dpi == 0.0 {
-                reportErrorAndExit("Invalid DPI value selected: 0.0")
-            }
-        case 5:
-            newFormatForSips = processFormat(argument)
-        case 6:
-            actionType = processActionType(argument)
-        case 7:
-            // Set widths based on action and set the action flag if the value is good
-            if actionType == "c" {
-                cropWidth = processActionValue(argument, actionType, true)
-            } else if actionType == "s" {
-                scaleWidth = processActionValue(argument, actionType, true)
-            } else {
-                padWidth = processActionValue(argument, actionType, true)
-            }
-        case 8:
-            // Set heights based on action, but clear the action flag if the value is bad
-            if actionType == "c" {
-                cropHeight = processActionValue(argument, actionType, false)
-                addAction("-c", cropWidth, cropHeight)
-            } else if actionType == "s" {
-                scaleHeight = processActionValue(argument, actionType, false)
-                addAction("-z", scaleWidth, scaleHeight)
-            } else {
-                padHeight = processActionValue(argument, actionType, false)
-                addAction("-p", padWidth, padHeight)
-            }
-        case 9:
-            // Set crop offset: will be a value in range 0-8
-            cropFix = processCropFix(argument)
-        case 10:
-            // FROM 6.3.0
-            // Set specific crop offset
-            cropFix = 4
-            cropLeft = processCropOffset(argument)
-        case 11:
-            cropDown = processCropOffset(argument)
-        default:
-            reportErrorAndExit("Unknown value: \(argument)")
+            case 1:
+                sourcePath = argument
+            case 2:
+                destPath = argument
+            case 3:
+                padColour = processColour(argument)
+            case 4:
+                dpi = Float(argument) ?? 150.0
+                if dpi == 0.0 {
+                    reportErrorAndExit("Invalid DPI value selected: 0.0")
+                }
+            case 5:
+                newFormatForSips = processFormat(argument)
+            case 6:
+                actionType = processActionType(argument)
+            case 7:
+                // Set widths based on action and set the action flag if the value is good
+                if actionType == "c" {
+                    cropWidth = processActionValue(argument, actionType, true)
+                } else if actionType == "s" {
+                    scaleWidth = processActionValue(argument, actionType, true)
+                } else {
+                    padWidth = processActionValue(argument, actionType, true)
+                }
+            case 8:
+                // Set heights based on action, but clear the action flag if the value is bad
+                if actionType == "c" {
+                    cropHeight = processActionValue(argument, actionType, false)
+                    addAction("-c", cropWidth, cropHeight)
+                } else if actionType == "s" {
+                    scaleHeight = processActionValue(argument, actionType, false)
+                    addAction("-z", scaleWidth, scaleHeight)
+                } else {
+                    padHeight = processActionValue(argument, actionType, false)
+                    addAction("-p", padWidth, padHeight)
+                }
+            case 9:
+                // Set crop offset: will be a value in range 0-8
+                cropFix = processCropFix(argument)
+            case 10:
+                // FROM 6.3.0
+                // Set specific crop offset
+                cropFix = 4
+                cropLeft = processCropOffset(argument)
+            case 11:
+                cropDown = processCropOffset(argument)
+            default:
+                reportErrorAndExit("Unknown value: \(argument)")
         }
 
         if argValue == 6 || argValue == 7 || argValue == 10 {
@@ -998,64 +1008,72 @@ for argument in args {
     } else {
         // Parse the next non-value argument
         switch argument.lowercased() {
-        case "-s":
-            fallthrough
-        case "--source":
-            argValue = 1
-        case "-d":
-            fallthrough
-        case "--destination":
-            argValue = 2
-        case "-c":
-            fallthrough
-        case "--color":
-            fallthrough
-        case "--colour":
-            argValue = 3
-        case "-r":
-            fallthrough
-        case "--resolution":
-            argValue = 4
-            doChangeResolution = true
-        case "-f":
-            fallthrough
-        case "--format":
-            argValue = 5
-            doReformat = true
-        case "-a":
-            fallthrough
-        case "--action":
-            argValue = 6
-        case "-q":
-            fallthrough
-        case "--quiet":
-            doShowMessages = false
-        case "-k":
-            fallthrough
-        case "--keep":
-            doDeleteSource = false
-        case "-o":
-            fallthrough
-        case "--overwrite":
-            doOverwrite = true
-        case "--createdirs":
-            doMakeSubDirectories = true
-        case "--info":
-            justInfo = true
-        case "--cropfrom":
-            argValue = 9
-        case "--offset":
-            argValue = 10
-        case "-h":
-            fallthrough
-        case "--help":
-            showHelp()
-            exit(EXIT_SUCCESS)
-        case "--version":
-            showVersion()
-            exit(EXIT_SUCCESS)
-        default:
-            reportErrorAndExit("Unknown argument: \(argument)")
+            case "-s":
+                fallthrough
+            case "--source":
+                argValue = 1
+            case "-d":
+                fallthrough
+            case "--destination":
+                argValue = 2
+            case "-c":
+                fallthrough
+            case "--color":
+                fallthrough
+            case "--colour":
+                argValue = 3
+            case "-r":
+                fallthrough
+            case "--resolution":
+                argValue = 4
+                doChangeResolution = true
+            case "-f":
+                fallthrough
+            case "--format":
+                argValue = 5
+                doReformat = true
+            case "-a":
+                fallthrough
+            case "--action":
+                argValue = 6
+            case "-q":
+                fallthrough
+            case "--quiet":
+                doShowMessages = false
+            case "-k":
+                fallthrough
+            case "--keep":
+                doDeleteSource = false
+            case "-o":
+                fallthrough
+            case "--overwrite":
+                doOverwrite = true
+            case "--createdirs":
+                doMakeSubDirectories = true
+            case "--info":
+                justInfo = true
+            case "--cropfrom":
+                argValue = 9
+            case "--offset":
+                argValue = 10
+            case "-h":
+                fallthrough
+            case "--help":
+                showHelp()
+                exit(EXIT_SUCCESS)
+            case "--version":
+                showVersion()
+                exit(EXIT_SUCCESS)
+            default:
+                // FROM 6.4.0
+                // Check for a command -- other items can be saved as possible files
+                let range: NSRange = cmdRegExp.rangeOfFirstMatch(in: argument, options: [], range: NSMakeRange(0, argument.count))
+                if range.location != NSNotFound {
+                    reportErrorAndExit("Unknown argument: \(argument)")
+                }
+
+                // Assume the value is a source file for now -- we'll check them later
+                sourceFiles.append(argument)
         }
 
         prevArg = argument
@@ -1074,30 +1092,79 @@ if actions.count == 0 && !doReformat && !doChangeResolution && !justInfo {
     reportErrorAndExit("No actions specified")
 }
 
-// Get the full source path
-// NOTE It may point to a single file
-sourcePath = getFullPath(sourcePath)
+/*
+ * SOURCE PATH(S) CHECKS
+ */
 
-// Check whether the source is a directory or a file,
-// and if neither exists, bail
-if !fm.fileExists(atPath: sourcePath, isDirectory: &sourceIsdirectory) {
-    reportErrorAndExit("Source \(sourcePath) cannot be found")
+// FROM 6.4.0
+// Check for any passed source files
+// NOTE These will override the -s flag value
+if sourceFiles.count > 0 {
+    var index: Int = 0
+    while (true)  {
+        // Reached the end of the list? Then exit
+        if index >= sourceFiles.count {
+            break
+        }
+
+        let file: String = getFullPath(sourceFiles[index])
+        sourceFiles[index] = file
+
+        // Check the referenced file exists. If it doesn't, remove it from the list
+        // and then restart the loop to get the next item if there is one
+        if !fm.fileExists(atPath: file, isDirectory: &sourceIsdirectory) {
+            reportWarning("Source \(file) cannot be found")
+            sourceFiles.remove(at: index)
+            continue
+        }
+
+        // Check the referenced file isn't a directory. If it is, remove it from the list
+        // and then restart the loop to get the next item if there is one
+        if sourceIsdirectory.boolValue {
+            reportWarning("Source \(file) is a directory -- use the -s flag to add a directory as a source")
+            sourceFiles.remove(at: index)
+            continue
+        }
+
+        index += 1
+    }
+
+    // Clear `sourcePath` -- see `processFile()`
+    sourcePath = ""
+    sourceIsdirectory = false
+} else {
+    // Get the full source path
+    // NOTE It may point to a single file
+    sourcePath = getFullPath(sourcePath)
+
+    // Check whether the source is a directory or a file,
+    // and if neither exists, bail
+    if !fm.fileExists(atPath: sourcePath, isDirectory: &sourceIsdirectory) {
+        reportErrorAndExit("Source \(sourcePath) cannot be found")
+    }
+
+    // If the source points to a file, add it to the list of passed files
+    if !sourceIsdirectory.boolValue {
+        //sourceFile = (sourcePath as NSString).lastPathComponent
+        //sourcePath = (sourcePath as NSString).deletingLastPathComponent
+        sourceFiles.append(sourcePath)
+        sourcePath = ""
+    }
 }
 
-// If the source points to a file, get the components
-if !sourceIsdirectory.boolValue {
-    sourceFile = (sourcePath as NSString).lastPathComponent
-    sourcePath = (sourcePath as NSString).deletingLastPathComponent
-}
+/*
+ * DESTINATION PATH CHECKS
+ */
 
 // Get full destination path
-// NOTE It may point to a single file
+// NOTE It may point to a single file, but this is only
+//      valid if `sourceFiles` contains a single file
 destPath = getFullPath(destPath)
 
-// Check whether the source is a directory or a file
+// Check whether the destination is a directory or a file
 if !fm.fileExists(atPath: destPath, isDirectory: &destIsdirectory) {
     // Destination is missing but this is valid if the destination is a file,
-    // so check its extension before bailing
+    // or an as-yet-uncreated directory, so check its extension before bailing
     if (destPath as NSString).pathExtension.count == 0 {
         // No file extension, ergo this is a directory
         processDirectory(destPath)
@@ -1114,8 +1181,8 @@ if !destIsdirectory.boolValue {
     destFile = (destPath as NSString).lastPathComponent
     destPath = (destPath as NSString).deletingLastPathComponent
 
-    // As a final check, test the path to the file -- we don't make
-    // intermediate directories, yet
+    // If the file doesn't exist, create directories that lead to
+    // where it's going to be placed
     if !fm.fileExists(atPath: destPath) {
         processDirectory(destPath)
     }
@@ -1123,22 +1190,76 @@ if !destIsdirectory.boolValue {
 
 // If the source is a directory and the target is a file, that's a mismatch
 // we can't resolve, so warn and bail
-if sourceIsdirectory.boolValue && !destIsdirectory.boolValue {
-    reportErrorAndExit("Source (dirctory) and destination (file) are mismatched")
+if !destIsdirectory.boolValue {
+    if sourceIsdirectory.boolValue {
+        reportErrorAndExit("Source (dirctory) and destination (file) are mismatched")
+    }
+
+    // FROM 6.4.0
+    // We can only accept a destination file if there's only one file on the list
+    if sourceFiles.count > 1 {
+        reportErrorAndExit("Source files require a directory destination")
+    }
 }
+
+/*
+ * DON'T DELETE SOURCE FILE(S) CHECKS
+ */
 
 // Auto-enable 'keep files' if the source and destination are the same
 if sourcePath == destPath && (sourceFile == destFile || (sourceFile != "" && destFile == "")) {
     doDeleteSource = false
 }
 
+// FROM 6.4.0
+// Make sure we don't delete single files if the named destination file matches, or
+// the destination directory is the same as the source
+if sourceFiles.count == 1 {
+    if !destIsdirectory.boolValue && sourceFiles[0] == destPath + "/" + destFile {
+        doDeleteSource = false
+    }
+
+    if destIsdirectory.boolValue && destPath == (sourceFiles[0] as NSString).deletingLastPathComponent {
+        doDeleteSource = false
+    }
+}
+
+// FROM 6.4.0
+// Make sure we don't delete added files if the named destination is
+// the same directory as the source. The files may be in very different
+// locations, so for now if one's source matches, don't delete any of them
+if sourceFiles.count > 1 {
+    // `destPath` has already been checked that it doesn't point to a file
+    // so no need to recheck it here
+    for file: String in sourceFiles {
+        if destPath == (file as NSString).deletingLastPathComponent {
+            doDeleteSource = false
+            break
+        }
+    }
+}
+
+/*
+ * INFORMATIION OUTPUT
+ */
+
 // Output the source and destination directories
 if doShowMessages {
-    writeToStderr("Source: \(sourcePath)/" + (sourceFile.count > 0 ? "\(sourceFile)" : ""))
+    if sourceIsdirectory.boolValue {
+        writeToStderr("Source: \(sourcePath)/" + (sourceFile.count > 0 ? "\(sourceFile)" : ""))
+    } else {
+        writeToStderr("Sources: \(sourceFiles.count) \(sourceFiles.count == 1 ? "file" : "files")")
+    }
+
     writeToStderr("Target: \(destPath)/" + (destFile.count > 0 ? "\(destFile)" : ""))
     if doChangeResolution { writeToStderr("New DPI: \(dpi)") }
     if doReformat { writeToStderr("New image format: \(newFormatForSips)") }
+    if doDeleteSource { writeToStderr("Will delete source image(s)") }
 }
+
+/*
+ * FILE PROCESSING
+ */
 
 // Split the path for a single source file or source directory
 if sourceIsdirectory.boolValue {
@@ -1155,15 +1276,26 @@ if sourceIsdirectory.boolValue {
 
         // Otherwise proceess each item - 'processFile()' determines suitability
         for file: String in contents.sorted() {
-            processFile(file)
+            // FROM 6.4.0 `processFile()` expects a full path
+            processFile(sourcePath + "/" + file)
         }
     } catch {
         reportErrorAndExit("Unable to get contents of source directory \(sourcePath)")
     }
 } else {
-    // The source file is a single image, so process it
-    processFile(sourceFile)
+    // FROM 6.4.0
+    // Run through source files added as arguments
+    if sourceFiles.count > 0 {
+        for file: String in sourceFiles {
+            // FROM 6.4.0 `processFile()` expects a full path
+            processFile(file)
+        }
+    }
 }
+
+/*
+ * OUTCOME OUTPUT
+ */
 
 // Present a final task report, if requested
 if doShowMessages {
