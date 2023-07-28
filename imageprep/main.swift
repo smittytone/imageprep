@@ -98,6 +98,7 @@ var cropLeft: Int               = -1
 var cropDown: Int               = -1
 // FROM 7.0.0
 var sourceFiles: [String]       = []
+var jpegCompression: Double     = 80.0
 
 // CLI argument management
 var argValue: Int               = 0
@@ -210,7 +211,6 @@ func processFile(_ file: String) {
     let ext: String = (file.lowercased() as NSString).pathExtension
     // FROM 7.0.0
     let fileName = (file as NSString).lastPathComponent
-    //let filePath = (file as NSString).deletingLastPathComponent
 
     // Only proceed if we have a file of the correct extension
     if !SUPPORTED_TYPES.contains(ext) { return }
@@ -224,13 +224,6 @@ func processFile(_ file: String) {
         // Destination is a specified file
         outputFile += destFile
     }
-
-    /* Get the full source image path
-    var inputFile: String = "\(file)"
-    if sourcePath.count > 0 {
-        inputFile = "\(sourcePath)/" + inputFile
-    }
-     */
 
     // Check the source image by loading it and getting image info
     let imageInfo: ImageInfo? = getImageInfo(file)
@@ -270,6 +263,7 @@ func processFile(_ file: String) {
     }
 
     // First process actions on the temporary work file
+    var sipsArgs: [String]
     if actions.count > 0 {
         for i: Int in 0..<actions.count {
             let action: Action = actions.object(at: i) as! Action
@@ -285,7 +279,7 @@ func processFile(_ file: String) {
             height = action.height == SCALE_TO_WIDTH ? Int(CGFloat(action.width) / imageInfo!.aspectRatio) : height
 
             // Set up sips' arguments
-            var sipsArgs: [String] = [tmpFile, action.type, "\(height)", "\(width)"]
+            sipsArgs = [tmpFile, action.type, "\(height)", "\(width)"]
 
             if action.type != "-z" {
                 if action.type == "-c" {
@@ -344,13 +338,25 @@ func processFile(_ file: String) {
             return
         }
 
+        // FROM 7.0.0
+        // Apply JPEG compression level
+        sipsArgs = [tmpFile, "--out", newOutputFile, "-s", "format", newFormatForSips]
+        if newFormatForSips == "jpeg" {
+            sipsArgs.append(contentsOf: ["-s", "formatOptions", "\(jpegCompression)"])
+        }
+
         // Create new-format file from the work file
-        runSips([tmpFile, "-s", "format", newFormatForSips, "--out", newOutputFile])
+        runSips(sipsArgs)
         outputFile = newOutputFile
     } else {
         // We're not reformatting the file, so write it back
         // using the source type (by its file extension)
-        runSips([tmpFile, "-s", "format", processFormat(ext), "--out", outputFile])
+        sipsArgs = [tmpFile, "--out", outputFile, "-s", "format", processFormat(ext)]
+        if formatExtension == "jpeg" {
+            sipsArgs.append(contentsOf: ["-s", "formatOptions", "\(jpegCompression)"])
+        }
+
+        runSips(sipsArgs)
     }
 
     // Remove the temporary work file now we're done
@@ -812,6 +818,35 @@ func processCropOffset(_ arg: String) -> Int {
 
 
 /**
+ Validate a user-specified JPEG compression level expressed as a percentage
+ (with or without the % symbol).
+
+ The app will exit on an invalid value.
+
+ FROM 7.0.0
+
+ - Parameters:
+    - arg: The anchor offset CLI argument.
+
+ - Returns: The compression level offset as a float.
+ */
+func processCompressionLevel(_ arg: String) -> Double {
+
+    var workArg: String = arg.lowercased()
+    if let percentPosition = workArg.firstIndex(of: "%") {
+        workArg = String(workArg[..<percentPosition])
+    }
+
+    let value: Double = Double(workArg) ?? -1.0
+    if value <= 0 || value > 100.0 {
+        reportErrorAndExit("Invalid JPEG compression level: \(arg)%")
+    }
+
+    return value
+}
+
+
+/**
  Display the app's help information.
  */
 func showHelp() {
@@ -846,6 +881,8 @@ func showHelp() {
     writeToStdout("                                               This setting will be overridden by --cropfrom")
     writeToStdout("    -r | --resolution  {dpi}                   Set the image dpi, eg. 300.")
     writeToStdout("    -f | --format      {format}                Set the image format (see above).")
+    writeToStdout("    -j | --jpeg        {level}                 Set the compression level of any saved JPEG images as a percentage.")
+    writeToStdout("                                               Default: 80")
     writeToStdout("    -o | --overwrite                           Overwrite an existing file. Without this, existing files will be kept.")
     writeToStdout("    -x                                         Delete the source file. Without this, the source will be retained.")
     writeToStdout("         --createdirs                          Make target intermediate directories if they do not exist.")
@@ -894,15 +931,6 @@ func showHeader() {
 
 
 // MARK: - Runtime Start
-
-// FROM 6.1.0
-// Trap ctrl-c
-/*
-signal(SIGINT) {
-    theSignal in writeToStderr("\(BSP)\(BSP)\rimageprep interrupted -- halting")
-    exit(EXIT_FAILURE)
-}
-*/
 
 // FROM 6.3.2
 // Make sure the signal does not terminate the application
@@ -996,6 +1024,9 @@ for argument in args {
                 cropLeft = processCropOffset(argument)
             case 11:
                 cropDown = processCropOffset(argument)
+            case 12:
+                // FROM 7.0.0
+                jpegCompression = processCompressionLevel(argument)
             default:
                 reportErrorAndExit("Unknown value: \(argument)")
         }
@@ -1061,6 +1092,11 @@ for argument in args {
                 argValue = 9
             case "--offset":
                 argValue = 10
+            // FROM 7.0.0
+            case "--jpeg":
+                fallthrough
+            case "-j":
+                argValue = 12
             case "-h":
                 fallthrough
             case "--help":
@@ -1260,6 +1296,7 @@ if doShowMessages {
     if doChangeResolution { writeToStderr("New DPI: \(dpi)") }
     if doReformat { writeToStderr("New image format: \(newFormatForSips)") }
     if doDeleteSource { writeToStderr("Will delete source image(s)") }
+    writeToStderr("Compression for JPEGs: \(jpegCompression)")
 }
 
 /*

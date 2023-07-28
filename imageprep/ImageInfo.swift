@@ -38,10 +38,12 @@ import Cocoa
 final class ImageInfo {
 
     // MARK: - Constants
+
     let BASE_DPI = 72.0
 
 
     // MARK: - Properties
+
     var width: Int = -1
     var height: Int = -1
     var dpi: CGFloat = -1
@@ -50,6 +52,7 @@ final class ImageInfo {
 
 
     // MARK: - Lifecycle Functions
+
     init(_ data: Data) {
         if let theImageRep: NSBitmapImageRep = NSBitmapImageRep(data: data) {
             // Set the instance
@@ -65,6 +68,7 @@ final class ImageInfo {
 
 
     // MARK: - Misc Functions
+
     private func calculateAspectRatio() {
 
         self.aspectRatio = CGFloat(self.width) / CGFloat(self.height)

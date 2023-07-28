@@ -37,6 +37,7 @@ For more detailed guidance on using *imageprep*, please [see this page](https://
 |      | `--offset` | `{x} {y}` | Set an anchor point for crop actions. See [**Anchor Points**](#anchor-points) below |
 | `-r` | `--resolution` | `{dpi}` | Set the image dpi, eg. 300 |
 | `-f` | `--format` | `{format}` | Set the image format: JPG/JPEG, PNG, GIF, BMP or TIF/TIFF |
+| `-j` |  | `{level}` | Specify a compression level (percentage) for JPEG images. Default: 80 |
 |      | `--createdirs` |  | Create intermediate directories to the destination, if needed. Default: do not create |
 | `-o` | `--overwrite` |  | Overwrite an existing file. Without this, existing files will be kept |
 |      | `--info` |  | Output image information in machine-readable form: path, width, height, resolution and alpha state |
@@ -66,6 +67,10 @@ You can specify an anchor point for crop operations. Use the `--cropfrom` switch
 You can specify crop anchors as x and y co-ordinates: this is the co-ordinate of the top left point of the retained area. For example, with a 1920 x 1080 image, to crop out all but a 500 by 400 area in the top left of the image, you would specify 500 and 400 as your width and height values, and 10 and 20 as your offset co-ordinates. Offset values cannot be negative, and values beyond the dimensions of the source image will be ignored.
 
 Please note that if you specify a crop anchor point using `--cropfrom`, it will override any offset value you specify.
+
+## JPEG Compression ##
+
+Any output JPEG images are compressed. The default quality setting is 80%. From version 7.0.0, you can specify an alternative value using the `-j` switch followed by a percentage value, eg, `-j 55`.
 
 ## Contributions ##
 
