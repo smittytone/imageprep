@@ -6,8 +6,8 @@
 # imageprep test harness
 #
 # @author    Tony Smith
-# @copyright 2021, Tony Smith
-# @version   1.2.0
+# @copyright 2023, Tony Smith
+# @version   1.3.0
 # @license   MIT
 #
 
@@ -21,7 +21,7 @@ image_src="$(pwd)/source"
 test_num=1
 
 fail() {
-    echo "\rTEST $2 FAILED -- $1"
+    echo "\rTEST $2 FAILED @ LINE $3: $1 "
     exit  1
 }
 
@@ -36,25 +36,25 @@ new_test() {
 
 check_dir_exists() {
     if [[ ! -e "$1" ]]; then
-        fail "Sub-directory $1 not created" $2
+        fail "Sub-directory $1 not created" $2 $LINENO
     fi
 }
 
 check_dir_not_exists() {
     if [[ -e "$1" ]]; then
-        fail "Sub-directory $1 created" $2
+        fail "Sub-directory $1 created" $2 $LINENO
     fi
 }
 
 check_file_exists() {
     if [[ ! -e "$1" ]]; then
-        fail "File $1 not created" $2
+        fail "File $1 not created" $2 $LINENO
     fi
 }
 
 check_file_not_exists() {
     if [[ -e "$1" ]]; then
-        fail "File $1 created" $2
+        fail "File $1 created" $2 $LINENO
     fi
 }
 
@@ -62,7 +62,7 @@ check_file_not_exists() {
 result=$(which "$test_app")
 result=$(echo -e "$result" | grep 'not found')
 if [[ -n "$result" ]]; then
-    fail "Cannot access test file $test_app" "\b"
+    fail "Cannot access test file $test_app" "\b" $LINENO
 fi
 
 # START
@@ -79,7 +79,7 @@ check_dir_exists test1 $test_num
 result=$(sips 'test1/BBC Space Themes.jpg' -g pixelHeight -1)
 result=$(echo "$result" | cut -d "|" -f2)
 if [[ "$result" != "  pixelHeight: 100" ]]; then
-    fail "Scale to 100 x 100 failed" $test_num
+    fail "Scale to 100 x 100 failed" $test_num $LINENO
 fi
 
 # Clear the output
@@ -97,14 +97,14 @@ check_dir_exists test1 $test_num
 result=$(sips 'test1/BBC Space Themes.jpg' -g pixelHeight -1)
 result=$(echo "$result" | cut -d "|" -f2)
 if [[ "$result" != "  pixelHeight: 100" ]]; then
-    fail "Crop to 200 x 100 failed" $test_num
+    fail "Crop to 200 x 100 failed" $test_num $LINENO
 fi
 
 # Make sure random image is 100px wide
 result=$(sips 'test1/BBC Space Themes.jpg' -g pixelWidth -1)
 result=$(echo "$result" | cut -d "|" -f2)
 if [[ "$result" != "  pixelWidth: 200" ]]; then
-    fail "Crop to 200 x 100 failed" $test_num
+    fail "Crop to 200 x 100 failed" $test_num $LINENO
 fi
 
 # Clear the output
@@ -121,7 +121,7 @@ check_dir_not_exists test1 $test_num
 # Check for error message (invalid DPI) in output
 result=$(echo -e "$result" | grep 'Invalid DPI value selected:')
 if [[ -z "$result" ]]; then
-    fail "0dpi setting not trapped" $test_num
+    fail "0dpi setting not trapped" $test_num $LINENO
 fi
 
 pass
@@ -137,7 +137,7 @@ check_dir_not_exists test1 $test_num
 result=$(echo -e "$result" | grep 'Invalid hex colour value supplied')
 if [[ -z "$result" ]]; then
     echo "***"
-    fail "Bad colour setting (too long) not trapped" $test_num
+    fail "Bad colour setting (too long) not trapped" $test_num $LINENO
 fi
 
 pass
@@ -152,7 +152,7 @@ check_dir_not_exists test1 $test_num
 # Check for error message (invalid colour) in output
 result=$(echo -e "$result" | grep 'Invalid hex colour value supplied')
 if [[ -z "$result" ]]; then
-    fail "Bad colour setting (bad hex) not trapped" $test_num
+    fail "Bad colour setting (bad hex) not trapped" $test_num $LINENO
 fi
 
 pass
@@ -167,7 +167,7 @@ check_dir_not_exists test1 $test_num
 # Check for error message (invalid colour) in output
 result=$(echo -e "$result" | grep 'image format')
 if [[ -z "$result" ]]; then
-    fail "Bad format setting not trapped" $test_num
+    fail "Bad format setting not trapped" $test_num $LINENO
 fi
 
 pass
@@ -182,7 +182,7 @@ check_dir_not_exists test1 $test_num
 # Check for error message (invalid colour) in output
 result=$(echo -e "$result" | grep 'Unknown argument')
 if [[ -z "$result" ]]; then
-    fail "Bad switch not trapped" $test_num
+    fail "Bad switch not trapped" $test_num $LINENO
 fi
 
 pass
@@ -197,7 +197,7 @@ check_dir_not_exists test1 $test_num
 # Check for error message (invalid colour) in output
 result=$(echo -e "$result" | grep 'Unknown argument')
 if [[ -z "$result" ]]; then
-    fail "Bad switch not trapped" $test_num
+    fail "Bad switch not trapped" $test_num $LINENO
 fi
 
 pass
@@ -212,7 +212,7 @@ result=$("$test_app" -k -a s 100 100 2>&1)
 # NOTE use 'No files converted' for .enumerate() ; 'is empty' for .contentsOfDirectory()
 result=$(echo -e "$result" | grep 'is empty') # Not an error, but an outcome
 if [[ -z "$result" ]]; then
-    fail "Empty directory not trapped" $test_num
+    fail "Empty directory not trapped" $test_num $LINENO
 fi
 
 pass
@@ -224,7 +224,7 @@ result=$("$test_app" -k -s test6 -a s 100 100 2>&1)
 # Check for error message (dir does not exist) in output
 result=$(echo -e "$result" | grep 'cannot be found')
 if [[ -z "$result" ]]; then
-    fail "Missing source directory not trapped" $test_num
+    fail "Missing source directory not trapped" $test_num $LINENO
 fi
 
 pass
@@ -238,7 +238,7 @@ check_dir_not_exists test7 $test_num
 # Make sure the missing target was spotted (because not created)
 result=$(echo -e "$result" | grep 'cannot be found')
 if [[ -z "$result" ]]; then
-    fail "Missing target directory not trapped" $test_num
+    fail "Missing target directory not trapped" $test_num $LINENO
 fi
 
 pass
@@ -254,7 +254,7 @@ check_dir_exists test8 $test_num
 result=$(sips 'test8/Space Invaded.jpg' -g pixelHeight -1)
 result=$(echo "$result" | cut -d "|" -f2)
 if [[ "$result" != "  pixelHeight: 100" ]]; then
-    fail "Scale to 100 x 100 failed" $test_num
+    fail "Scale to 100 x 100 failed" $test_num $LINENO
 fi
 
 pass
@@ -268,14 +268,14 @@ check_dir_exists test9 $test_num
 
 # Check a random file was converted
 if [[ ! -e 'test9/Fourth Dimension.png' ]]; then
-    fail "File not converted to PNG" $test_num
+    fail "File not converted to PNG" $test_num $LINENO
 fi
 
 # Make sure random image is scaled
 result=$(sips 'test9/Out of this World.png' -g pixelHeight -1)
 result=$(echo "$result" | cut -d "|" -f2)
 if [[ "$result" != "  pixelHeight: 100" ]]; then
-    fail "Scale to 100 x 100 failed" $test_num
+    fail "Scale to 100 x 100 failed" $test_num $LINENO
 fi
 
 cd ..
@@ -298,7 +298,7 @@ check_file_exists test10a/oow.jpg $test_num
 result=$(sips test10a/oow.jpg -g pixelHeight -1)
 result=$(echo "$result" | cut -d "|" -f2)
 if [[ "$result" != "  pixelHeight: 100" ]]; then
-    fail "Scale to 100 x 100 failed" $test_num
+    fail "Scale to 100 x 100 failed" $test_num $LINENO
 fi
 
 # Make sure source file deleted (no -k switch)
@@ -316,11 +316,11 @@ result=$("$test_app" -s oow.jpg -a s 150 150 2>&1)
 # Make sure target file created
 check_file_exists oow.jpg $test_num
 
-# Make sure image is 100px high
+# Make sure image is 150px high
 result=$(sips oow.jpg -g pixelHeight -1)
 result=$(echo "$result" | cut -d "|" -f2)
 if [[ "$result" != "  pixelHeight: 150" ]]; then
-    fail "Scale to 100 x 100 failed" $test_num
+    fail "Scale to 150 x 150 failed" $test_num $LINENO
 fi
 
 rm oow.jpg
@@ -333,7 +333,7 @@ result=$("$test_app" -s "$image_src" -d "test.jpg" --createdirs -a s 150 150 2>&
 # Make sure the mismatch was spotted
 result=$(echo -e "$result" | grep 'mismatched')
 if [[ -z "$result" ]]; then
-    fail "Mismatched source and destination not trapped" $test_num
+    fail "Mismatched source and destination not trapped" $test_num $LINENO
 fi
 
 pass
@@ -347,7 +347,7 @@ result=$("$test_app" -s "$image_src" -d "$test_dir" -a s 0 150 -k 2>&1)
 # Make sure the mismatch was spotted
 result=$(echo -e "$result" | grep 'Invalid scale width')
 if [[ -z "$result" ]]; then
-    fail "Bad scale width not trapped" $test_num
+    fail "Bad scale width not trapped" $test_num $LINENO
 fi
 
 pass
@@ -359,7 +359,7 @@ result=$("$test_app" -s "$image_src" -d "$test_dir" -a s 150 ZZZ -k 2>&1)
 # Make sure the mismatch was spotted
 result=$(echo -e "$result" | grep 'Invalid scale height')
 if [[ -z "$result" ]]; then
-    fail "Bad scale width not trapped" $test_num
+    fail "Bad scale width not trapped" $test_num $LINENO
 fi
 
 pass
@@ -371,7 +371,7 @@ result=$("$test_app" -s "$image_src" -d "$test_dir" -a c AAA ZZZ -k 2>&1)
 # Make sure the mismatch was spotted
 result=$(echo -e "$result" | grep 'Invalid crop width')
 if [[ -z "$result" ]]; then
-    fail "Bad scale width not trapped" $test_num
+    fail "Bad scale width not trapped" $test_num $LINENO
 fi
 
 pass
@@ -383,7 +383,7 @@ result=$("$test_app" -s "$image_src" -d "$test_dir" -a c 150 '£' -k 2>&1)
 # Make sure the mismatch was spotted
 result=$(echo -e "$result" | grep 'Invalid crop height')
 if [[ -z "$result" ]]; then
-    fail "Bad scale width not trapped" $test_num
+    fail "Bad scale width not trapped" $test_num $LINENO
 fi
 
 pass
@@ -395,7 +395,7 @@ result=$("$test_app" -s "$image_src" -d "$test_dir" -a p A B -k 2>&1)
 # Make sure the mismatch was spotted
 result=$(echo -e "$result" | grep 'Invalid pad width')
 if [[ -z "$result" ]]; then
-    fail "Bad scale width not trapped" $test_num
+    fail "Bad scale width not trapped" $test_num $LINENO
 fi
 
 pass
@@ -407,7 +407,7 @@ result=$("$test_app" -s "$image_src" -d "$test_dir" -a p 1 K -k 2>&1)
 # Make sure the mismatch was spotted
 result=$(echo -e "$result" | grep 'Invalid pad height')
 if [[ -z "$result" ]]; then
-    fail "Bad scale width not trapped" $test_num
+    fail "Bad scale width not trapped" $test_num $LINENO
 fi
 
 rm -rf "$test_dir"
@@ -422,7 +422,7 @@ result=$("$test_app" -s "$test_file" -a s 100 100 -k 2>&1)
 # Make sure the mismatch was spotted
 result=$(echo -e "$result" | grep 'skipping')
 if [[ -z "$result" ]]; then
-    fail "Zero-content file not trapped" $test_num
+    fail "Zero-content file not trapped" $test_num $LINENO
 fi
 
 rm "$test_file"
@@ -435,7 +435,7 @@ result=$("$test_app" -s "$image_src" -a z 100 100 -k 2>&1)
 # Make sure the mismatch was spotted
 result=$(echo -e "$result" | grep 'Invalid action selected')
 if [[ -z "$result" ]]; then
-    fail "Bad action not trapped" $test_num
+    fail "Bad action not trapped" $test_num $LINENO
 fi
 
 pass
@@ -447,7 +447,7 @@ result=$("$test_app" -s "$image_src" -a s x x -k 2>&1)
 # Make sure the mismatch was spotted
 result=$(echo -e "$result" | grep 'No actions specified')
 if [[ -z "$result" ]]; then
-    fail "Ignorable actions not ignored" $test_num
+    fail "Ignorable actions not ignored" $test_num $LINENO
 fi
 
 pass
@@ -463,7 +463,7 @@ result2=$(sips "test$test_num/BBC Space Themes.jpg" -g pixelWidth -1)
 result1=$(echo "$result1" | cut -d "|" -f2)
 result2=$(echo "$result1" | cut -d "|" -f2)
 if [[ "$result1" != "  pixelHeight: 1500" && "$result2" != "  pixelWidth: 1000" ]]; then
-    fail "Scale to 1000 x image height failed" $test_num
+    fail "Scale to 1000 x image height failed" $test_num $LINENO
 fi
 
 rm -rf "test$test_num"
@@ -480,7 +480,7 @@ result2=$(sips "test$test_num/BBC Space Themes.jpg" -g pixelWidth -1)
 result1=$(echo "$result1" | cut -d "|" -f2)
 result2=$(echo "$result1" | cut -d "|" -f2)
 if [[ "$result1" != "  pixelHeight: 800" && "$result2" != "  pixelWidth: 1500" ]]; then
-    fail "Scale to image width x 800 failed" $test_num
+    fail "Scale to image width x 800 failed" $test_num $LINENO
 fi
 
 rm -rf "test$test_num"
@@ -496,7 +496,7 @@ result2=$(sips 2000AD_0086_24.jpg -g pixelWidth -1)
 result1=$(echo "$result1" | cut -d "|" -f2)
 result2=$(echo "$result1" | cut -d "|" -f2)
 if [[ "$result1" != "  pixelHeight: 160" && "$result2" != "  pixelWidth: 130" ]]; then
-    fail "Scale to 130 by aspect ratio failed" $test_num
+    fail "Scale to 130 by aspect ratio failed" $test_num $LINENO
 fi
 
 rm 2000AD_0086_24.jpg
@@ -509,7 +509,7 @@ result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a c 130 m --cropfrom gg
 # Make sure the mismatch was spotted
 result=$(echo -e "$result" | grep 'Invalid crop anchor')
 if [[ -z "$result" ]]; then
-    fail "Bad crop point not trapped" $test_num
+    fail "Bad crop point not trapped" $test_num $LINENO
 fi
 
 pass
@@ -524,7 +524,7 @@ result2=$(sips 2000AD_0086_24.jpg -g pixelWidth -1)
 result1=$(echo "$result1" | cut -d "|" -f2)
 result2=$(echo "$result1" | cut -d "|" -f2)
 if [[ "$result1" != "  pixelHeight: 800" && "$result2" != "  pixelWidth: 650" ]]; then
-    fail "Crop to 650 x 800 failed" $test_num
+    fail "Crop to 650 x 800 failed" $test_num $LINENO
 fi
 
 pass
@@ -534,13 +534,13 @@ echo "NOTE -- Manually verify 2000AD_0086_24.jpg is a bottom-right crop"
 new_test
 result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a c 229 231 --offset 285 97 -k -d 2000AD_0086_24b.jpg 2>&1)
 
-# Make sure image os 229 x 231
+# Make sure image is 229 x 231
 result1=$(sips 2000AD_0086_24b.jpg -g pixelHeight -1)
 result2=$(sips 2000AD_0086_24b.jpg -g pixelWidth -1)
 result1=$(echo "$result1" | cut -d "|" -f2)
 result2=$(echo "$result2" | cut -d "|" -f2)
 if [[ "$result1" != "  pixelHeight: 231" && "$result2" != "  pixelWidth: 229" ]]; then
-    fail "Crop to 229 x 231 failed" $test_num
+    fail "Crop to 229 x 231 failed" $test_num $LINENO
 fi
 
 pass
@@ -548,7 +548,7 @@ echo "NOTE -- Manually verify 2000AD_0086_24b.jpg is a Johnny Alpha face crop"
 
 # TEST -- check for bad offset
 new_test
-result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a c 229 231 --offset -285 97 -k -d 2000AD_0086_24b.jpg 2>&1)
+result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a c 229 231 --offset -285 97 -k -d 2000AD_0086_24c.jpg 2>&1)
 
 # Make sure bad offset trapped
 result=$(echo -e "$result" | grep 'Invalid crop offset')
@@ -560,31 +560,31 @@ pass
 
 # TEST -- check for bad arg trapping
 new_test
-result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a c 229 --offset -285 97 -k -d 2000AD_0086_24c.jpg 2>&1)
+result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a c 229 --offset -285 97 -k -d 2000AD_0086_24d.jpg 2>&1)
 
 # Make sure bad offset trapped
 result=$(echo -e "$result" | grep 'Missing value for')
 if [[ -z "$result" ]]; then
-    fail "Missing value not trapped" $test_num
+    fail "Missing value not trapped" $test_num $LINENO
 fi
 
 pass
 
 # TEST -- check for zero offset adjustments
 new_test
-result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a c 1300 300 --offset 0 100 -k -d 2000AD_0086_24d.jpg 2>&1)
+result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a c 1300 300 --offset 0 100 -k -d 2000AD_0086_24e.jpg 2>&1)
 
 # Make sure image os 1300 x 300
-result1=$(sips 2000AD_0086_24d.jpg -g pixelHeight -1)
-result2=$(sips 2000AD_0086_24d.jpg -g pixelWidth -1)
+result1=$(sips 2000AD_0086_24e.jpg -g pixelHeight -1)
+result2=$(sips 2000AD_0086_24e.jpg -g pixelWidth -1)
 result1=$(echo "$result1" | cut -d "|" -f2)
 result2=$(echo "$result2" | cut -d "|" -f2)
 if [[ "$result1" != "  pixelHeight: 300" && "$result2" != "  pixelWidth: 1300" ]]; then
-    fail "Crop to 1300 x 300 failed ($result1 x $result2)" $test_num
+    fail "Crop to 1300 x 300 failed ($result1 x $result2)" $test_num $LINENO
 fi
 
 pass
-echo "NOTE -- Manually verify 2000AD_0086_24b.jpg is a Johnny Alpha face crop"
+echo "NOTE -- Manually verify 2000AD_0086_24e.jpg is a strip crop"
 
 echo "ALL TESTS PASSED"
 echo "DON'T FORGET TO DELETE TEST OUTPUT FILES BEFORE RE-RUNNING"
