@@ -48,13 +48,13 @@ check_dir_not_exists() {
 
 check_file_exists() {
     if [[ ! -e "$1" ]]; then
-        fail "File $1 not created" $2 $LINENO
+        fail "File $1 not created" $2 $3
     fi
 }
 
 check_file_not_exists() {
     if [[ -e "$1" ]]; then
-        fail "File $1 created" $2 $LINENO
+        fail "File $1 created" $2 $3
     fi
 }
 
@@ -292,7 +292,7 @@ result=$("$test_app" -x -s test10/oow.jpg -d test10a --createdirs -a s 100 100 2
 check_dir_exists test10a $test_num
 
 # Make sure target file created
-check_file_exists test10a/oow.jpg $test_num
+check_file_exists test10a/oow.jpg $test_num $LINENO
 
 # Make sure image is 100px high
 result=$(sips test10a/oow.jpg -g pixelHeight -1)
@@ -302,7 +302,7 @@ if [[ "$result" != "  pixelHeight: 100" ]]; then
 fi
 
 # Make sure source file deleted (-x switch)
-check_file_not_exists test10/oow.jpg $test_num
+check_file_not_exists test10/oow.jpg $test_num $LINENO
 
 rm -rf test10
 rm -rf test10a
@@ -314,7 +314,7 @@ cp "source/Out of this World.jpg" oow.jpg
 result=$("$test_app" -x -s oow.jpg -a s 150 150 2>&1)
 
 # Make sure target file created
-check_file_exists oow.jpg $test_num
+check_file_exists oow.jpg $test_num $LINENO
 
 # Make sure image is 150px high
 result=$(sips oow.jpg -g pixelHeight -1)
@@ -608,6 +608,76 @@ if [[ -z "$result" ]]; then
     fail "Missing value not trapped" $test_num $LINENO
 fi
 
+pass
+
+# TEST -- check reformatting
+new_test
+result=$("$test_app" -s "$image_src/doctor.png" -a s 150 150 -f jpg -d . 2>&1)
+
+check_file_exists doctor.jpg $test_num $LINENO
+
+rm doctor.jpg
+pass
+
+
+# TEST -- check bad compression value
+new_test
+result=$("$test_app" -s "$image_src/doctor.png" -a s 150 150 -f jpg -j 1000 -d . 2>&1)
+
+# Make sure bad value trapped
+result=$(echo -e "$result" | grep 'Invalid JPEG compression level:')
+if [[ -z "$result" ]]; then
+    fail "Invalid JPEG compression level not trapped" $test_num $LINENO
+fi
+
+pass
+
+
+# TEST -- check good compression value
+new_test
+result=$("$test_app" -s "$image_src/doctor.png" -a s 150 150 -f jpg -j 50 -d . 2>&1)
+
+# Make sure bad value trapped
+result=$(echo -e "$result" | grep 'Invalid JPEG compression level:')
+if [[ -n "$result" ]]; then
+    fail "Invalid JPEG compression level not trapped" $test_num $LINENO
+fi
+
+rm doctor.jpg
+pass
+
+
+# TEST -- check good compression value with % sign
+new_test
+result=$("$test_app" -s "$image_src/doctor.png" -a s 150 150 -f jpg --jpeg '42.42%' -d . 2>&1)
+
+# Make sure good value not trapped
+result=$(echo -e "$result" | grep 'Invalid JPEG compression level:')
+if [[ -n "$result" ]]; then
+    fail "Invalid JPEG compression level not trapped" $test_num $LINENO
+fi
+
+rm doctor.jpg
+pass
+
+
+# TEST -- check good compression value
+new_test
+result=$("$test_app" -s "$image_src/doctor.png" -a s 150 150 -f jpg -j 05 -d ./d05.jpg 2>&1)
+result=$("$test_app" -s "$image_src/doctor.png" -a s 150 150 -f jpg -j 95 -d ./d95.jpg 2>&1)
+
+# Make sure files have been written
+check_file_exists d05.jpg $test_num $LINENO
+check_file_exists d95.jpg $test_num $LINENO
+
+size05=$(du -k d05.jpg | cut -f 1)
+size95=$(du -k d95.jpg | cut -f 1)
+
+if [[ ${size95} -le ${size05} ]]; then
+    fail "File sizes incorrect for compression" $test_num $LINENO
+fi
+
+rm d05.jpg d95.jpg
 pass
 
 echo "ALL TESTS PASSED"
