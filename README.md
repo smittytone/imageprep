@@ -70,7 +70,7 @@ Please note that if you specify a crop anchor point using `--cropfrom`, it will 
 
 ## JPEG Compression ##
 
-Any output JPEG images are compressed. The default quality setting is 80%. From version 7.0.0, you can specify an alternative value using the `-j` switch followed by a percentage value, eg, `-j 55`.
+Any output JPEG images are compressed. The default quality setting is 80%. From version 7.0.0, you can specify an alternative value using the `-j` switch followed by a percentage value, eg, `-j 55`. The request for this feature centred solely on JPEG images, but I hope to support other formats’ compression schemes in future releases.
 
 ## Contributions ##
 
@@ -81,7 +81,7 @@ Contributions are welcome, but pull requestss can only be accepted when they tar
 - 7.0.0 *Unreleased*
     - Support the loading of individual files, not just a directory.
     - Deleting source files after processing is no longer the default -- see [Breaking Change](#breaking-change), above.
-    - Allow the compression level of JPEG output to be specified by the user.
+    - Allow the compression level of JPEG output to be specified by the user -- see [JPED Compression](#jpeg-compression), above..
 - 6.3.4 *25 May 2022*
     - Add `man` page.
 - 6.3.3 *23 July 2021*
