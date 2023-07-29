@@ -525,6 +525,7 @@ func reportError(_ message: String) {
 func reportErrorAndExit(_ message: String, _ code: Int32 = EXIT_FAILURE) {
 
     writeToStderr(RED + BOLD + "ERROR " + RESET + message + " -- exiting")
+    dss.cancel()
     exit(code)
 }
 
@@ -948,12 +949,12 @@ dss.setEventHandler {
 // ...and start the event flow
 dss.resume()
 
- 
 // FROM 6.1.0
 // No arguments? Show Help
 var args: [String] = CommandLine.arguments
 if args.count == 1 {
     showHelp()
+    dss.cancel()
     exit(EXIT_SUCCESS)
 }
 
@@ -1101,9 +1102,11 @@ for argument in args {
                 fallthrough
             case "--help":
                 showHelp()
+                dss.cancel()
                 exit(EXIT_SUCCESS)
             case "--version":
                 showVersion()
+                dss.cancel()
                 exit(EXIT_SUCCESS)
             default:
                 // FROM 7.0.0
@@ -1312,7 +1315,8 @@ if sourceIsdirectory.boolValue {
 
         // If there are no contents, bail
         if contents.count == 0 {
-            report("Source directory \(sourcePath) is empty")
+            reportWarning("Source directory \(sourcePath) is empty")
+            dss.cancel()
             exit(EXIT_SUCCESS)
         }
 
@@ -1356,4 +1360,5 @@ if actions.count > 0 {
 }
 
 // And done...
+dss.cancel()
 exit(EXIT_SUCCESS)
