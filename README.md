@@ -78,7 +78,7 @@ Contributions are welcome, but pull requestss can only be accepted when they tar
 
 ## Release Notes ##
 
-- 7.0.0 *Unreleased*
+- 7.0.0 *10 August 2023*
     - Support the loading of individual files, not just a directory.
     - Deleting source files after processing is no longer the default -- see [Breaking Change](#breaking-change), above.
     - Allow the compression level of JPEG output to be specified by the user -- see [JPED Compression](#jpeg-compression), above..

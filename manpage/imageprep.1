@@ -1,4 +1,4 @@
-.TH IMAGEPREP "1" "May 2022" "imageprep 6.3.4 (104)"
+.TH IMAGEPREP "1" "August 2023" "imageprep 7.0.0 (134)"
 
 .SH NAME
 imageprep \- Manipulate mutiple image files.
@@ -6,12 +6,15 @@ imageprep \- Manipulate mutiple image files.
 .SH SYNOPSIS
 \fBimageprep\fR [\fB\-s\fR path] [\fB\-d\fR path] [\fB\-c\fR pad_colour]
           [\fB\-a\fR s scale_height scale_width] [\fB\-a\fR p pad_height pad_width]
-          [\fB\-a\fR c crop_height crop_width] [\fB\-\-cropfrom point] [\fB\-r\fR] [\fB\-f\fR] [\fB\-k\fR]
+          [\fB\-a\fR c crop_height crop_width] [\fB\-\-cropfrom point] [\fB\-r\fR] [\fB\-f\fR] [\fB\-x\fR]
           [\fB\-o\fR] [\fB\-h\fR] [\fB\-\-info\fR] [\fB\-\-createdirs\fR] [\fB\-\-version\fR]
+          {files}
 
 .SH DESCRIPTION
 .P
 \fBimageprep\fR is a macOS image preparation utility. Use it to crop, scale and/or pad one or mor images, convert them to other formats and/or set their print resolution (dots per inch). The image formats it supports are: PNG, JPEG, TIFF, PICT, BMP and GIF.
+
+Specify a source directory with the \fB\-s\fR | \fB\-\-source\fR option, or provide a list of files after the options.
 
 .SH OPTIONS
 .P
@@ -42,7 +45,7 @@ imageprep \- Manipulate mutiple image files.
 .P
 \fB\-o\fR | \fB\-\-overwrite\fR                      Overwrite an existing file. Without this, existing files will be kept.
 .P
-\fB\-k\fR | \fB\-\-keep\fR                           Keep the source file. Without this, the source will be deleted.
+\fB\-x\fR                                    Delete the source file. Without this, the source will be retained.
 .P
 \fB\-\-createdirs\fR                          Make target intermediate directories if they do not exist.
 .P
@@ -58,40 +61,45 @@ imageprep \- Manipulate mutiple image files.
 
 Convert files in the current directory to JPEG and to 300dpi:
 .IP
-imageprep \fB\-f\fR jpeg \fB\-r\fR 300
+imageprep \fB\-f\fR jpeg \fB\-r\fR 300 \fB\-x\fR
+.P
+
+Convert the named files to JPEG and to 300dpi, keeping the orignals:
+.IP
+imageprep \fB\-f\fR jpeg \fB\-r\fR 300 image.jpg ~/images/image1.jpg
 .P
 
 Scale to 128 x 128, keeping the originals:
 .IP
-imageprep \fB\-s\fR $SOURCE \fB\-d\fR $DEST \fB\-a\fR s 128 128 \fB\-k\fR
+imageprep \fB\-s\fR $SOURCE \fB\-d\fR $DEST \fB\-a\fR s 128 128
 .P
 
 Scale to height of 1024, width in aspect, keeping the originals:
 .IP
-imageprep \fB\-s\fR $SOURCE \fB\-d\fR $DEST \fB\-a\fR s m 1024 \fB\-k\fR
+imageprep \fB\-s\fR $SOURCE \fB\-d\fR $DEST \fB\-a\fR s m 1024
 .P
 
 Crop files to 1000 x 100, making intermediate directories, keeping originals:
 .IP
-imageprep \fB\-s\fR $SOURCE \fB\-d\fR $DEST \fB\-\-createdirs\fR \fB\-a\fR c 1000 1000 \fB\-k\fR
+imageprep \fB\-s\fR $SOURCE \fB\-d\fR $DEST \fB\-\-createdirs\fR \fB\-a\fR c 1000 1000
 .P
 
 Crop files to 1000 x source image height, keeping originals:
 .IP
-imageprep \fB\-s\fR $SOURCE \fB\-d\fR $DEST \fB\-a\fR c 1000 x \fB\-k\fR
+imageprep \fB\-s\fR $SOURCE \fB\-d\fR $DEST \fB\-a\fR c 1000 x
 .P
 
-Crop files to 500 x 500, anchored at top right:
+Crop files to 500 x 500, anchored at top right, keeping originals:
 .IP
 imageprep \fB\-s\fR $SOURCE \fB\-d\fR $DEST \fB\-a\fR c 500 500 \fB\-\-cropfrom\fR tr
 .P
 
 Pad to 2000 x 2000 with magenta, deleting the originals:
 .IP
-imageprep \fB\-s\fR $SOURCE \fB\-d\fR $DEST \fB\-a\fR p 2000 2000 \fB\-c\fR ff00ff
+imageprep \fB\-s\fR $SOURCE \fB\-d\fR $DEST \fB\-a\fR p 2000 2000 \fB\-c\fR ff00ff \fB\-x\fR
 
 .SH COPYRIGHT
-Code and design copyright © 2022, Tony Smith (\fB@smittytone\fR). Source code available under the MIT licence.
+Code and design copyright © 2023, Tony Smith (\fB@smittytone\fR). Source code available under the MIT licence.
 
 .SH "SEE ALSO"
 \fIhttps://smittytone.net/imageprep/index.html\fR
