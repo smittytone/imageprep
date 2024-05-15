@@ -4,7 +4,7 @@
 
 ## Breaking Change
 
-From 7.0.0, *imageprep* no longer deletes source files by default as they are processed. For this reason, the `-k` and `--keep` switches have been removedand their use will throw an error.
+From 7.0.0, *imageprep* no longer deletes source files by default as they are processed. For this reason, the `-k` and `--keep` switches have been removed and their use will throw an error.
 
 To enforce source-file deletion, please use the new `-x` switch.
 
@@ -74,14 +74,14 @@ Any output JPEG images are compressed. The default quality setting is 80%. From 
 
 ## Contributions ##
 
-Contributions are welcome, but pull requestss can only be accepted when they target the `develop` branch. PRs targetting `main` will be rejected.
+Contributions are welcome, but pull requests can only be accepted when they target the `develop` branch. PRs targetting `main` will be rejected.
 
 ## Release Notes ##
 
 - 7.0.0 *10 August 2023*
     - Support the loading of individual files, not just a directory.
     - Deleting source files after processing is no longer the default -- see [Breaking Change](#breaking-change), above.
-    - Allow the compression level of JPEG output to be specified by the user -- see [JPED Compression](#jpeg-compression), above..
+    - Allow the compression level of JPEG output to be specified by the user -- see [JPEG Compression](#jpeg-compression), above..
 - 6.3.4 *25 May 2022*
     - Add `man` page.
 - 6.3.3 *23 July 2021*
