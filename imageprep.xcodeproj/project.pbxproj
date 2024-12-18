@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 53;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -31,8 +31,16 @@
 		3B283B92256EACCF002B999D /* imageprep */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = imageprep; sourceTree = BUILT_PRODUCTS_DIR; };
 		3B283B95256EACCF002B999D /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		3B283B9D256EAD4E002B999D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		3B69BDB12A73B47100415A8E /* testimageprep.zsh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; name = testimageprep.zsh; path = tests/testimageprep.zsh; sourceTree = "<group>"; };
-		3B69BDB22A73B47100415A8E /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = tests/README.md; sourceTree = "<group>"; };
+		3BD584592D13078F006388F1 /* 2000AD_0086_24.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = 2000AD_0086_24.jpg; sourceTree = "<group>"; };
+		3BD5845A2D13078F006388F1 /* BBC Space Themes.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "BBC Space Themes.jpg"; sourceTree = "<group>"; };
+		3BD5845B2D13078F006388F1 /* doctor.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = doctor.png; sourceTree = "<group>"; };
+		3BD5845C2D13078F006388F1 /* Fourth Dimension.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "Fourth Dimension.jpg"; sourceTree = "<group>"; };
+		3BD5845D2D13078F006388F1 /* Out of this World.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "Out of this World.jpg"; sourceTree = "<group>"; };
+		3BD5845E2D13078F006388F1 /* Space Invaded.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "Space Invaded.jpg"; sourceTree = "<group>"; };
+		3BD5845F2D13078F006388F1 /* Star Wars and Other Great Space Themes.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "Star Wars and Other Great Space Themes.jpg"; sourceTree = "<group>"; };
+		3BD584612D13078F006388F1 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		3BD584622D13078F006388F1 /* testimageprep.zsh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = testimageprep.zsh; sourceTree = "<group>"; };
+		3BD584642D13079D006388F1 /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
 		3BF352A225756308009F8D72 /* Action.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Action.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -52,6 +60,7 @@
 			children = (
 				3B09E0ED2A7258CD003C3EF8 /* README.md */,
 				3B09E0EC2A7258CD003C3EF8 /* LICENSE.md */,
+				3BD584642D13079D006388F1 /* Package.swift */,
 			);
 			name = Misc;
 			sourceTree = "<group>";
@@ -60,7 +69,7 @@
 			isa = PBXGroup;
 			children = (
 				3B283B94256EACCF002B999D /* imageprep */,
-				3B69BDB32A73B47900415A8E /* Tests */,
+				3BD584632D13078F006388F1 /* tests */,
 				3B09E0EE2A7258D6003C3EF8 /* Misc */,
 				3B283B93256EACCF002B999D /* Products */,
 			);
@@ -85,13 +94,28 @@
 			path = imageprep;
 			sourceTree = "<group>";
 		};
-		3B69BDB32A73B47900415A8E /* Tests */ = {
+		3BD584602D13078F006388F1 /* source */ = {
 			isa = PBXGroup;
 			children = (
-				3B69BDB22A73B47100415A8E /* README.md */,
-				3B69BDB12A73B47100415A8E /* testimageprep.zsh */,
+				3BD584592D13078F006388F1 /* 2000AD_0086_24.jpg */,
+				3BD5845A2D13078F006388F1 /* BBC Space Themes.jpg */,
+				3BD5845B2D13078F006388F1 /* doctor.png */,
+				3BD5845C2D13078F006388F1 /* Fourth Dimension.jpg */,
+				3BD5845D2D13078F006388F1 /* Out of this World.jpg */,
+				3BD5845E2D13078F006388F1 /* Space Invaded.jpg */,
+				3BD5845F2D13078F006388F1 /* Star Wars and Other Great Space Themes.jpg */,
 			);
-			name = Tests;
+			path = source;
+			sourceTree = "<group>";
+		};
+		3BD584632D13078F006388F1 /* tests */ = {
+			isa = PBXGroup;
+			children = (
+				3BD584602D13078F006388F1 /* source */,
+				3BD584612D13078F006388F1 /* README.md */,
+				3BD584622D13078F006388F1 /* testimageprep.zsh */,
+			);
+			path = tests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
