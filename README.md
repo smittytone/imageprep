@@ -81,7 +81,7 @@ Contributions are welcome, but pull requests can only be accepted when they targ
 - 7.0.0 *10 August 2023*
     - Support the loading of individual files, not just a directory.
     - Deleting source files after processing is no longer the default -- see [Breaking Change](#breaking-change), above.
-    - Allow the compression level of JPEG output to be specified by the user -- see [JPEG Compression](#jpeg-compression), above..
+    - Allow the compression level of JPEG output to be specified by the user -- see [JPED Compression](#jpeg-compression), above.
 - 6.3.4 *25 May 2022*
     - Add `man` page.
 - 6.3.3 *23 July 2021*
