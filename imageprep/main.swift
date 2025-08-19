@@ -573,7 +573,7 @@ func showHelp() {
     Stdio.report("        imageprep -s $SOURCE -d $DEST -a c 500 500 --cropfrom tr -x\n")
     Stdio.report("    Pad to 2000 x 2000 with magenta, deleting the originals:\n")
     Stdio.report("        imageprep -s $SOURCE -d $DEST -a p 2000 2000 -c ff00ff -x\n")
-    Stdio.report("\(String(.italic))https://smittytone.net/imageprep/index.html\n\(String(.normal))")
+    Stdio.report("\(String(.italic))https://smittytone.net/imageprep/index.html\(String(.normal))")
 }
 
 
@@ -585,6 +585,6 @@ func showHeader() {
     let version: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String
     let build: String   = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as! String
     let name: String    = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as! String
-    Stdio.report("\(name) \(version) (\(build))")
-    Stdio.report("Copyright © 2023, Tony Smith (@smittytone). Source code available under the MIT licence.")
+    Stdio.report("\(String(.bold))\(name) \(version) (\(build))\(String(.normal))")
+    Stdio.report("Copyright © 2025, Tony Smith (@smittytone). Source code available under the MIT licence.")
 }
