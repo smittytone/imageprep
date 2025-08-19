@@ -2,7 +2,7 @@
     imageprep
     main.swift
 
-    Copyright © 2023 Tony Smith. All rights reserved.
+    Copyright © 2025 Tony Smith. All rights reserved.
 
     MIT License
     Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -28,37 +28,20 @@ import Foundation
 import Cocoa
 
 
-// MARK: - Constants
+// MARK: Constants
 
 let SUPPORTED_TYPES: [String]   = ["png", "jpeg", "tiff", "pict", "bmp", "gif", "jpg", "tif"]
 let DEDUPE_INDEX: Int           = 6
 let EMPTY_HEX_BYTES: String     = "000000"
-
-// FROM 6.1.0 -- Use stderr, stdout for output
-let STD_ERR: FileHandle         = FileHandle.standardError
-let STD_OUT: FileHandle         = FileHandle.standardOutput
-let STD_IN: FileHandle          = FileHandle.standardInput
-
-// FROM 6.1.0 -- TTY formatting
-let RED: String                 = "\u{001B}[31m"
-let YELLOW: String              = "\u{001B}[33m"
-let RESET: String               = "\u{001B}[0m"
-let BOLD: String                = "\u{001B}[1m"
-let ITALIC: String              = "\u{001B}[3m"
-let BSP: String                 = String(UnicodeScalar(8))
-
 // FROM 6.2.0
 let BASE_DPI: CGFloat           = 72.0
 let USE_IMAGE: Int              = -1
 let SCALE_TO_WIDTH: Int         = -2
 let SCALE_TO_HEIGHT: Int        = -3
 let ACTION_TYPES: [String]      = ["c", "s", "p"]
-// FROM 6.3.3
-let CTRL_C_MSG: String          = "\(BSP)\(BSP)\rimageprep interrupted -- halting"
-let EXIT_CTRL_C_CODE: Int32     = 130
 
 
-// MARK: - Global Variables
+// MARK: Global Variables
 
 // File management values
 let fm: FileManager             = FileManager.default
@@ -108,853 +91,18 @@ var prevArg: String             = ""
 var fileCount: Int              = 0
 
 
-// MARK: - Functions
-
-/**
- Convert a partial path to an absolute path.
- 
- - Parameters:
-    - relativePath: A relative path, ie. contains `../` or lacks a `/` prefix.
- 
- - Returns: An absolute path as a string.
- */
-func getFullPath(_ relativePath: String) -> String {
-
-    // Standardise the path as best as we can (this covers most cases)
-    var absolutePath: String = (relativePath as NSString).standardizingPath
-
-    // Check for a unresolved relative path -- and if it is one, resolve it
-    // NOTE This includes raw filenames
-    if (absolutePath as NSString).contains("..") || !(absolutePath as NSString).hasPrefix("/") {
-        absolutePath = processRelativePath(absolutePath)
-    }
-
-    // Return the absolute path
-    return absolutePath
-}
-
-
-/**
- Add the basepath (the current working directory of the call) to the
- supplied relative path - and then resolve it.
- 
- - Parameters:
-    - relativePath: A relative path, ie. contains `../` or lacks a `/` prefix.
- 
- - Returns: An absolute path as a string.
- */
-func processRelativePath(_ relativePath: String) -> String {
-
-    let absolutePath: String = fm.currentDirectoryPath + "/" + relativePath
-    return (absolutePath as NSString).standardizingPath
-}
-
-
-/**
- Load the specified image and gather data from it.
- 
- - Parameters:
-    - path: An image file path.
- 
- - Returns: An ImageInfo object, or `nil` on error.
- */
-func getImageInfo(_ path: String) -> ImageInfo? {
-
-    // Read the target file in as data and check its length
-    let data: Data = fm.contents(atPath: path) ?? Data.init(count: 0)
-    if data.count == 0 {
-        return nil
-    }
-
-    // Create an ImageInfo instance and populate it using an NSBitmapImageRep
-    // created from the data we just loaded
-    return ImageInfo(data)
-}
-
-
-/**
- If we are to create all the directories to 'path', attempt to do so,
- or just bail in other cases.
- 
- - Parameters:
-    - path: An image file path.
- */
-func processDirectory(_ path: String) {
-
-    if doMakeSubDirectories {
-        // Try to create the path to the specified directory
-        do {
-            try fm.createDirectory(at: URL.init(fileURLWithPath: path),
-                                   withIntermediateDirectories: true,
-                                   attributes: nil)
-        } catch {
-            reportErrorAndExit("Destination \(path) does not exist and cannot be created")
-        }
-    } else {
-        // Directory doesn't exist, we've not been told to create it, so bail
-        reportErrorAndExit("Destination \(destPath) cannot be found")
-    }
-}
-
-
-/**
- Process a single source-image file.
- 
- FROM 7.0.0 `file` is a full path including a file name
- 
- - Parameters:
-    - file: An image file path.
- */
-func processFile(_ file: String) {
-
-    // Get the file extension
-    let ext: String = (file.lowercased() as NSString).pathExtension
-    // FROM 7.0.0
-    let fileName = (file as NSString).lastPathComponent
-
-    // Only proceed if we have a file of the correct extension
-    if !SUPPORTED_TYPES.contains(ext) { return }
-
-    // Determine the file's output file path
-    var outputFile: String = destPath + "/"
-    if destIsdirectory.boolValue {
-        // Target is a directory, so add the file name
-        outputFile += fileName
-    } else {
-        // Destination is a specified file
-        outputFile += destFile
-    }
-
-    // Check the source image by loading it and getting image info
-    let imageInfo: ImageInfo? = getImageInfo(file)
-    if imageInfo == nil {
-        reportWarning("File \(fileName) has no content -- skipping")
-        return
-    }
-
-    if justInfo {
-        // User just wants file data, so output it and exit
-        let hasAlpha: String = imageInfo!.hasAlpha ? "alpha" : "no-alpha"
-        writeToStdout("\(file) \(imageInfo!.width) \(imageInfo!.height) \(imageInfo!.dpi) \(imageInfo!.aspectRatio) " + hasAlpha)
-        return
-    }
-
-    // Set the temporary work file path
-    let tmpFile: String = outputFile + ".sipstmp"
-
-    // Make the temporary work file. It's a TIFF so we need to
-    // check the source image type first
-    if ext == "tif" || ext == "tiff" {
-        // Source image IS a TIFF...
-        if file != outputFile {
-            // ...but it's not at the same location as the output file,
-            // so just copy it across
-            do {
-               try fm.copyItem(at: URL.init(fileURLWithPath: file),
-                               to: URL.init(fileURLWithPath: tmpFile))
-            } catch {
-                reportWarning("Could not write \(outputFile) -- skipping")
-                return
-            }
-        }
-    }  else {
-        // The source is not a TIFF, so just create the temp file
-        runSips([file, "-s", "format", "tiff", "--out", tmpFile])
-    }
-
-    // First process actions on the temporary work file
-    var sipsArgs: [String]
-    if actions.count > 0 {
-        for i: Int in 0..<actions.count {
-            let action: Action = actions.object(at: i) as! Action
-
-            // FROM 6.2.0
-            // Calculate actual width and height of final image based on input
-            // Set width, height appropriately: first for raw image valiues...
-            var width: Int = action.width == USE_IMAGE ? imageInfo!.width : action.width
-            var height: Int = action.height == USE_IMAGE ? imageInfo!.height : action.height
-
-            // ...then for aspect ratio
-            width = action.width == SCALE_TO_HEIGHT ? Int(CGFloat(action.height) * imageInfo!.aspectRatio) : width
-            height = action.height == SCALE_TO_WIDTH ? Int(CGFloat(action.width) / imageInfo!.aspectRatio) : height
-
-            // Set up sips' arguments
-            sipsArgs = [tmpFile, action.type, "\(height)", "\(width)"]
-
-            if action.type != "-z" {
-                if action.type == "-c" {
-                    if cropFix != 4 {
-                        // Calculate the x and y offsets and add --cropOffset to the command array
-                        var xOffset: Int = 0
-                        var yOffset: Int = 0
-
-                        if cropFix > 2 {
-                            yOffset = imageInfo!.height - height
-                        }
-
-                        if cropFix == 3 || cropFix == 5 {
-                            yOffset = yOffset >> 1
-                        }
-
-                        if cropFix % 3 != 0 {
-                            xOffset = imageInfo!.width - width
-                        }
-
-                        if cropFix == 1 || cropFix == 7 {
-                            xOffset = xOffset >> 1
-                        }
-
-                        // FROM 6.3.1
-                        // Deal with sips zero offset issue with a function
-                        sipsArgs.append(contentsOf: ["--cropOffset", "\(sipsOffsetfix(yOffset))", "\(sipsOffsetfix(xOffset))"])
-                    } else if cropLeft != -1 && cropDown != -1 {
-                        sipsArgs.append(contentsOf: ["--cropOffset", "\(sipsOffsetfix(cropDown))", "\(sipsOffsetfix(cropLeft))"])
-                    }
-                }
-
-                // Don't add a pad colour to a scale to avoid losing alpha
-                sipsArgs.append(contentsOf: ["--padColor", action.colour])
-            }
-
-            // Apply the action
-            runSips(sipsArgs)
-        }
-    }
-
-    // Set the DPI, if requested
-    if doChangeResolution {
-        runSips([tmpFile, "-s", "dpiHeight", "\(dpi)", "-s", "dpiWidth", "\(dpi)"])
-    }
-
-    // Set the image format, if requested
-    if doReformat {
-        // Whatever the image type, we output the new format
-        // as a new file with the correct extension
-        let newOutputFile: String = (outputFile as NSString).deletingPathExtension + "." + formatExtension
-
-        if fm.fileExists(atPath: newOutputFile) && !doOverwrite {
-            // Uh oh! There's already a file there and we have not set the 'do overwrite' flag
-            reportWarning("target file \(newOutputFile) already exists -- skipping")
-            return
-        }
-
-        // FROM 7.0.0
-        // Apply JPEG compression level
-        sipsArgs = [tmpFile, "--out", newOutputFile, "-s", "format", newFormatForSips]
-        if newFormatForSips == "jpeg" {
-            sipsArgs.append(contentsOf: ["-s", "formatOptions", "\(jpegCompression)"])
-        }
-
-        // Create new-format file from the work file
-        runSips(sipsArgs)
-        outputFile = newOutputFile
-    } else {
-        // We're not reformatting the file, so write it back
-        // using the source type (by its file extension)
-        sipsArgs = [tmpFile, "--out", outputFile, "-s", "format", processFormat(ext)]
-        if formatExtension == "jpeg" {
-            sipsArgs.append(contentsOf: ["-s", "formatOptions", "\(jpegCompression)"])
-        }
-
-        runSips(sipsArgs)
-    }
-
-    // Remove the temporary work file now we're done
-    let success: Bool = removeFile(tmpFile)
-    if !success {
-        reportWarning("Could not delete temporary file \(tmpFile) after processing")
-    }
-
-    // Remove the source file, if requested
-    if doDeleteSource {
-        let success: Bool = removeFile(file)
-        if !success {
-            reportWarning("Could not delete source file \(fileName) after processing")
-        }
-    }
-
-    // Increment the file counter
-    fileCount += 1
-
-    // Report process
-    report("Image \(file) processed to \(outputFile)...")
-}
-
-
-/**
- Generic file remover called from `processFile()`.
- 
- - Parameters:
-    - path: An image file path.
- 
- - Returns: `true` if the operation succeeded, otherwise `false`.
- */
-func removeFile(_ path: String) -> Bool {
-
-    do {
-        try fm.removeItem(at: URL.init(fileURLWithPath: path))
-    } catch {
-        return false
-    }
-
-    return true
-}
-
-
-/**
- Call `sips` using Process.
- 
- - Parameters:
-    - args: An array of `sips` arguments.
- */
-func runSips(_ args: [String]) {
-
-    let task: Process = Process()
-    task.executableURL = URL.init(fileURLWithPath: "/usr/bin/sips")
-    if args.count > 0 { task.arguments = args }
-
-    // Pipe out the output to avoid putting it in the log
-    let outputPipe: Pipe = Pipe()
-    task.standardOutput = outputPipe
-    task.standardError = outputPipe
-
-    do {
-        try task.run()
-    } catch {
-        reportErrorAndExit("Cannot locate sips")
-    }
-
-    // Block until the task has completed (short tasks ONLY)
-    task.waitUntilExit()
-
-    // Look for and deal with execution issues
-    if !task.isRunning {
-        if (task.terminationStatus != 0) {
-            // Command failed -- collect the output if there is any
-            let outputHandle: FileHandle = outputPipe.fileHandleForReading
-            var outString: String = ""
-            if outputHandle.availableData.count > 0 {
-                outString = String(data: outputHandle.availableData, encoding: String.Encoding.utf8) ?? ""
-            }
-
-            if outString.count > 0 {
-                reportError("sips reported an error: \(outString)")
-            } else {
-                reportError("sips reported error code \(task.terminationStatus) -- task not completed")
-            }
-        }
-    }
-}
-
-
-/**
- `sips` shows incorrect behaviour when `--cropOffset` values are zero,
- but it can handle fractional values, so convert the former to the
- latter.
- 
- FROM 6.3.1
- 
- - Parameters:
-    - offsetValue: The integer value we are converting.
- 
- - Returns: The offset value as a float.
- */
-func sipsOffsetfix(_ offsetValue: Int) -> Float {
-
-    if offsetValue == 0 {
-        return 0.0001
-    }
-
-    return Float(offsetValue)
-}
-
-
-/**
- Generic message display routine.
- 
- Relies on global `doShowMessage`.
- 
- - Parameters:
-    - message: The string to output.
- */
-func report(_ message: String) {
-
-    if doShowMessages {
-        writeToStderr(message)
-    }
-}
-
-
-/**
- Generic warning display routine.
- 
- Does not exit on completion.
- 
- - Parameters:
-    - message: The string to output.
- */
-func reportWarning(_ message: String) {
-
-    writeToStderr(YELLOW + BOLD + "WARNING" + RESET + " " + message)
-}
-
-
-/**
- Generic error display routine.
- 
- Does not exit on completion.
- 
- - Parameters:
-    - message: The string to output.
- */
-func reportError(_ message: String) {
-
-    writeToStderr(RED + BOLD + "ERROR" + RESET + " " + message)
-}
-
-
-/**
- Generic error display routine.
- 
- Exits app on completion.
- 
- - Parameters:
-    - message: The string to output.
-    - code:    The exit code to issue. Default: `EXIT_FAILURE`.
- */
-func reportErrorAndExit(_ message: String, _ code: Int32 = EXIT_FAILURE) {
-
-    writeToStderr(RED + BOLD + "ERROR " + RESET + message + " -- exiting")
-    dss.cancel()
-    exit(code)
-}
-
-
-/**
- Write errors and other messages to `stderr`.
- 
- - Parameters:
-    - message: The string to output.
- */
-func writeToStderr(_ message: String) {
-
-    writeOut(STD_ERR, message)
-}
-
-
-/**
- Write result data and app output to `stdout`.
- 
- - Parameters:
-    - output: The string to output.
- */
-func writeToStdout(_ output: String) {
-
-    writeOut(STD_OUT, output)
-}
-
-
-/**
- Write a string to the specified file handle.
- 
- - Parameters:
-    - fileHandle: The target file handle, eg. `STDERR`.
-    - message:    The string to be written.
- */
-func writeOut(_ fileHandle: FileHandle, _ message: String) {
-
-    let outputString: String = message + "\r\n"
-    if let outputData: Data = outputString.data(using: .utf8) {
-        fileHandle.write(outputData)
-    }
-}
-
-
-/**
- Validate a user-supplied colour value.
- 
- Check that the value is in hex, and clean it up for `sips`.
- 
- - Parameters:
-    - colourString: The colour value as a String.
- 
- - Returns: The corrected colour value as a String.
- */
-func processColour(_ colourString: String) -> String {
-
-    var workColour: String = colourString
-
-    // Remove any likely preceeding hex markers
-    while true {
-        var match: Bool = false
-
-        for prefixString: String in ["#", "0x", "\\x", "x", "$"] {
-            if (workColour as NSString).hasPrefix(prefixString) {
-                workColour = String(workColour.suffix(workColour.count - prefixString.count))
-                match = true
-            }
-        }
-
-        if !match { break }
-    }
-
-    // Check for an out-of-range value
-    if workColour.count > 6 {
-        reportErrorAndExit("Invalid hex colour value supplied \(colourString)")
-    }
-
-    // Check it's actually hex (or makes sense as hex)
-    let scanner: Scanner = Scanner.init(string: workColour)
-    var dummy: UInt64 = 0
-    if !scanner.scanHexInt64(&dummy) {
-        reportErrorAndExit("Invalid hex colour value supplied \(colourString)")
-    }
-
-    // Pre-pad the hex string up to six characters
-    if workColour.count < 6 {
-        workColour = String(EMPTY_HEX_BYTES.prefix(6 - workColour.count)) + workColour
-    }
-
-    return workColour
-}
-
-
-/**
- Validate a user-supplied file type.
- 
- Make sure a correct format has been passed, and adjust
- it if for `sips` use, eg. `JPG` -> `jpeg`, `tif` -> `tiff`, etc.
- 
- - Parameters:
-    - format: The file format as a String.
- 
- - Returns: The corrected format as a String.
- */
-func processFormat(_ format: String) -> String {
-
-    // Store the expected format as provided by the user --
-    // this is later used to set the target's file extension
-    formatExtension = format
-    var workFormat: String = format.lowercased()
-
-    // If we don't have a good format, bail
-    if !SUPPORTED_TYPES.contains(workFormat) {
-        reportErrorAndExit("Invalid image format selected: \(workFormat)")
-    }
-
-    // Handle duplicate extensions
-    if workFormat == "jpg" {
-        workFormat = "jpeg"
-    } else if workFormat == "tif" {
-        workFormat = "tiff"
-    }
-
-    return workFormat
-}
-
-
-/**
- Validate a user-supplied image-processing action's type.
- 
- - Parameters:
-    - arg: The action specification CLI argument.
- 
- - Returns: The corrected action marker as a lower case String.
- */
-func processActionType(_ arg: String) -> String {
-
-    let workArg: String = arg.lowercased()
-
-    if !ACTION_TYPES.contains(workArg) {
-        reportErrorAndExit("Invalid action selected: \(arg)")
-    }
-
-    return workArg
-}
-
-
-/**
- Validate a user-supplied image-processing action's settings.
- 
- The app will exit on an invalid setting.
- 
- - Parameters:
-    - arg:     The action setting CLI argument.
-    - action:  The action the setting relates to.
-    - isWidth: Is this an image-width setting?
- 
- - Returns: The corrected setting value as an integer.
- */
-func processActionValue(_ arg: String, _ action: String, _ isWidth: Bool) -> Int {
-
-    if arg.lowercased() == "x" {
-        // User wants to retain the image's native value
-        return USE_IMAGE
-    }
-
-    if arg.lowercased() == "m" {
-        // User wants a dimension determined by
-        // the source image's aspect ratio
-        return isWidth ? SCALE_TO_HEIGHT : SCALE_TO_WIDTH
-    }
-
-    let value: Int = Int(arg) ?? 0
-    if value < 1 {
-        let theValue: String = isWidth ? "width" : "height"
-        let theAction: String = getActionName(action)
-        reportErrorAndExit("Invalid \(theAction) \(theValue) value")
-    }
-
-    return value
-}
-
-
-/**
- Validate a user-supplied action and add it to the list of actions to be performed on each image.
- 
- Ensure that if, for example, both height and width are image native, we don't need to do
- anything.
- 
- - Parameters:
-    - action: The user-specified action, eg. `c` for 'crop'.
-    - width:  The target image-width.
-    - height: The target image-height.
- */
-func addAction(_ action: String, _ width: Int, _ height: Int) {
-
-    if (width == USE_IMAGE && height == USE_IMAGE) || (width == SCALE_TO_HEIGHT && height == SCALE_TO_WIDTH) {
-        let theAction: String = getActionName(action)
-        reportWarning("Action \(theAction) will not change the image -- ignoring")
-        return
-    }
-
-    // Add the action to the list of those we'll perform
-    actions.add(Action.init(action, width, height, padColour))
-}
-
-
-/**
- Return a human-readable action name.
- 
- For example, `c` is returned as `crop`, `s` as `scale`, `p` as `pad`.
- 
- - Parameters:
-    - action: The action code.
- 
- - Returns: The action's human-readable name.
- */
-func getActionName(_ action: String) -> String {
-
-    var theAction: String = "crop"
-    if action == "s" || action == "-z" { theAction = "scale" }
-    if action == "p" || action == "-p"  { theAction = "pad" }
-    return theAction
-}
-
-
-/**
- Validate a user-specified crop anchor point value.
- 
- Converts textual anchor point identifiers to their numeric equivalents,
- eg. `br` (bottom right) -> `8`.
- 
- The app will exit on an invalid value.
- 
- - Parameters:
-    - arg: The anchor point CLI argument.
- 
- - Returns: The decoded anchor point as an integer.
- */
-func processCropFix(_ arg: String) -> Int {
-
-    let workArg: String = arg.lowercased()
-
-    // Check for a numeric value
-    var value: Int = Int(workArg) ?? -99
-    if value == -99 {
-        // 'arg' is textual, eg. 'tr', so convert to a value
-        if workArg.hasPrefix("t") { value = 0 }
-        if workArg.hasPrefix("c") { value = 3 }
-        if workArg.hasPrefix("b") { value = 6 }
-
-        if workArg.hasSuffix("l") { value += 0 }
-        if workArg.hasSuffix("c") { value += 1 }
-        if workArg.hasSuffix("r") { value += 2 }
-    }
-
-    // If there was no text match, throw an error
-    if value < 0 || value > 8 {
-        reportErrorAndExit("Invalid crop anchor point: \(arg)")
-    }
-
-    return value
-}
-
-
-/**
- Validate a user-specified crop anchor point value.
- 
- Converts textual anchor point identifiers to their numeric equivalents,
- eg. `br` (bottom right) -> `8`.
- 
- The app will exit on an invalid value.
- 
- FROM 6.3.0
- 
- - Parameters:
-    - arg: The anchor offset CLI argument.
- 
- - Returns: The anchor offset as an integer.
- */
-func processCropOffset(_ arg: String) -> Int {
-
-    let workArg: String = arg.lowercased()
-    let value: Int = Int(workArg) ?? -99
-    if value < 0 {
-        reportErrorAndExit("Invalid crop offset: \(arg)")
-    }
-
-    return value
-}
-
-
-/**
- Validate a user-specified JPEG compression level expressed as a percentage
- (with or without the % symbol).
-
- The app will exit on an invalid value.
-
- FROM 7.0.0
-
- - Parameters:
-    - arg: The anchor offset CLI argument.
-
- - Returns: The compression level offset as a float.
- */
-func processCompressionLevel(_ arg: String) -> Double {
-
-    var workArg: String = arg.lowercased()
-    if let percentPosition = workArg.firstIndex(of: "%") {
-        workArg = String(workArg[..<percentPosition])
-    }
-
-    let value: Double = Double(workArg) ?? -1.0
-    if value <= 0 || value > 100.0 {
-        reportErrorAndExit("Invalid JPEG compression level: \(arg)%")
-    }
-
-    return value
-}
-
-
-/**
- Display the app's help information.
- */
-func showHelp() {
-
-    // Display the version info
-    showHeader()
-
-    // Get the list of suported formats, ignoring similarly named ones
-    var formats: String = ""
-    for i: Int in 0..<DEDUPE_INDEX {
-        formats += (SUPPORTED_TYPES[i].uppercased() + (i < DEDUPE_INDEX - 1 ? ", " : ""))
-    }
-
-    writeToStdout("\nA macOS image preparation utility.\r\n" + ITALIC + "https://smittytone.net/imageprep/index.html\n" + RESET)
-    writeToStdout(BOLD + "USAGE" + RESET + "\n    imageprep [-s path] [-d path] [-c pad_colour]")
-    writeToStdout("              [-a s scale_height scale_width] [-a p pad_height pad_width]")
-    writeToStdout("              [-a c crop_height crop_width] [--cropfrom point] [-r] [-f] [-x]")
-    writeToStdout("              [-o] [-h] [--info] [--createdirs] [--version]\n")
-    writeToStdout("    Image formats supported: \(formats).\n")
-    writeToStdout(BOLD + "OPTIONS" + RESET)
-    writeToStdout("    -s | --source      {path}                  The path to an image or a directory of images.")
-    writeToStdout("                                               Default: current working directory.")
-    writeToStdout("    -d | --destination {path}                  The path to the images. Default: source directory.")
-    writeToStdout("    -a | --action      {type} {width} {height} The crop/pad dimensions. Type is s (scale), c (crop) or p (pad).")
-    writeToStdout("                                               Provide absolute integer values for width or height, or")
-    writeToStdout("                                               x to use the image's existing dimension, or m to maintain")
-    writeToStdout("                                               the source image's aspect ratio")
-    writeToStdout("    -c | --colour      {colour}                The padding colour in Hex, eg. A1B2C3. Default: FFFFFF.")
-    writeToStdout("         --cropfrom    {point}                 Anchor point for crop actions. Use tr for top right, cl for")
-    writeToStdout("                                               centre left, br for bottom right, etc.")
-    writeToStdout("         --offset      {x} {y}                 Specify a top-left co-ordinate for the crop origin.")
-    writeToStdout("                                               This setting will be overridden by --cropfrom")
-    writeToStdout("    -r | --resolution  {dpi}                   Set the image dpi, eg. 300.")
-    writeToStdout("    -f | --format      {format}                Set the image format (see above).")
-    writeToStdout("    -j | --jpeg        {level}                 Set the compression level of any saved JPEG images as a percentage.")
-    writeToStdout("                                               Default: 80")
-    writeToStdout("    -o | --overwrite                           Overwrite an existing file. Without this, existing files will be kept.")
-    writeToStdout("    -x                                         Delete the source file. Without this, the source will be retained.")
-    writeToStdout("         --createdirs                          Make target intermediate directories if they do not exist.")
-    writeToStdout("         --info                                Export basic image info: path, height, width, dpi and alpha.")
-    writeToStdout("    -q | --quiet                               Silence output messages (errors excepted).")
-    writeToStdout("    -h | --help                                This help screen.")
-    writeToStdout("         --version                             Version information.\n")
-    writeToStdout(BOLD + "EXAMPLES" + RESET)
-    writeToStdout("    Convert files in the current directory to JPEG and to 300dpi:\n")
-    writeToStdout("        imageprep -f jpeg -r 300\n")
-    writeToStdout("    Scale to 128 x 128, keeping the originals:\n")
-    writeToStdout("        imageprep -s $SOURCE -d $DEST -a s 128 128\n")
-    writeToStdout("    Scale to height of 1024, width in aspect, keeping the originals:\n")
-    writeToStdout("        imageprep -s $SOURCE -d $DEST -a s m 1024\n")
-    writeToStdout("    Crop files to 1000 x 100, making intermediate directories, keeping originals:\n")
-    writeToStdout("        imageprep -s $SOURCE -d $DEST --createdirs -a c 1000 1000\n")
-    writeToStdout("    Crop files to 1000 x source image height, keeping originals:\n")
-    writeToStdout("        imageprep -s $SOURCE -d $DEST -a c 1000 x\n")
-    writeToStdout("    Crop files to 500 x 500, anchored at top right, deleting the originals:\n")
-    writeToStdout("        imageprep -s $SOURCE -d $DEST -a c 500 500 --cropfrom tr -x\n")
-    writeToStdout("    Pad to 2000 x 2000 with magenta, deleting the originals:\n")
-    writeToStdout("        imageprep -s $SOURCE -d $DEST -a p 2000 2000 -c ff00ff -x\n")
-}
-
-
-/**
- Display app version information
- */
-func showVersion() {
-
-    showHeader()
-    writeToStdout("Copyright © 2023, Tony Smith (@smittytone).\r\nSource code available under the MIT licence.")
-}
-
-
-/**
- Display the app's version number
- */
-func showHeader() {
-
-    let version: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String
-    let build: String   = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as! String
-    let name: String    = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as! String
-    writeToStdout("\(name) \(version) (\(build))")
-}
-
-
-// MARK: - Runtime Start
+// MARK: Runtime Start
 
 // FROM 6.3.2
 // Make sure the signal does not terminate the application
-signal(SIGINT, SIG_IGN)
-
-// Set up an event source for SIGINT...
-let dss: DispatchSourceSignal = DispatchSource.makeSignalSource(signal: SIGINT,
-                                                                queue: DispatchQueue.main)
-// ...add an event handler (from above)...
-dss.setEventHandler {
-    writeToStderr(CTRL_C_MSG)
-    exit(EXIT_CTRL_C_CODE)
-}
-
-// ...and start the event flow
-dss.resume()
+Stdio.enableCtrlHandler("impageprep interrupted -- cancelling")
 
 // FROM 6.1.0
 // No arguments? Show Help
 var args: [String] = CommandLine.arguments
 if args.count == 1 {
     showHelp()
-    dss.cancel()
+    Stdio.disableCtrlHandler()
     exit(EXIT_SUCCESS)
 }
 
@@ -975,7 +123,7 @@ for argument in args {
         // Make sure we have a value to read, ie. the current arg is not a switch or flag
         let range: NSRange = cmdRegExp.rangeOfFirstMatch(in: argument, options: [], range: NSMakeRange(0, argument.count))
         if range.location != NSNotFound {
-            reportErrorAndExit("Missing value for \(prevArg)")
+            Stdio.reportErrorAndExit("Missing value for \(prevArg)")
         }
 
         switch argValue {
@@ -984,52 +132,52 @@ for argument in args {
             case 2:
                 destPath = argument
             case 3:
-                padColour = processColour(argument)
+                padColour = Imageprep.processColour(argument)
             case 4:
                 dpi = Float(argument) ?? 150.0
                 if dpi == 0.0 {
-                    reportErrorAndExit("Invalid DPI value selected: 0.0")
+                    Stdio.reportErrorAndExit("Invalid DPI value selected: 0.0")
                 }
             case 5:
-                newFormatForSips = processFormat(argument)
+                newFormatForSips = Imageprep.processFormat(argument)
             case 6:
-                actionType = processActionType(argument)
+                actionType = Imageprep.processActionType(argument)
             case 7:
                 // Set widths based on action and set the action flag if the value is good
                 if actionType == "c" {
-                    cropWidth = processActionValue(argument, actionType, true)
+                    cropWidth = Imageprep.processActionValue(argument, actionType, true)
                 } else if actionType == "s" {
-                    scaleWidth = processActionValue(argument, actionType, true)
+                    scaleWidth = Imageprep.processActionValue(argument, actionType, true)
                 } else {
-                    padWidth = processActionValue(argument, actionType, true)
+                    padWidth = Imageprep.processActionValue(argument, actionType, true)
                 }
             case 8:
                 // Set heights based on action, but clear the action flag if the value is bad
                 if actionType == "c" {
-                    cropHeight = processActionValue(argument, actionType, false)
-                    addAction("-c", cropWidth, cropHeight)
+                    cropHeight = Imageprep.processActionValue(argument, actionType, false)
+                    Imageprep.addAction("-c", cropWidth, cropHeight)
                 } else if actionType == "s" {
-                    scaleHeight = processActionValue(argument, actionType, false)
-                    addAction("-z", scaleWidth, scaleHeight)
+                    scaleHeight = Imageprep.processActionValue(argument, actionType, false)
+                    Imageprep.addAction("-z", scaleWidth, scaleHeight)
                 } else {
-                    padHeight = processActionValue(argument, actionType, false)
-                    addAction("-p", padWidth, padHeight)
+                    padHeight = Imageprep.processActionValue(argument, actionType, false)
+                    Imageprep.addAction("-p", padWidth, padHeight)
                 }
             case 9:
                 // Set crop offset: will be a value in range 0-8
-                cropFix = processCropFix(argument)
+                cropFix = Imageprep.processCropFix(argument)
             case 10:
                 // FROM 6.3.0
                 // Set specific crop offset
                 cropFix = 4
-                cropLeft = processCropOffset(argument)
+                cropLeft = Imageprep.processCropOffset(argument)
             case 11:
-                cropDown = processCropOffset(argument)
+                cropDown = Imageprep.processCropOffset(argument)
             case 12:
                 // FROM 7.0.0
-                jpegCompression = processCompressionLevel(argument)
+                jpegCompression = Imageprep.processCompressionLevel(argument)
             default:
-                reportErrorAndExit("Unknown value: \(argument)")
+                Stdio.reportErrorAndExit("Unknown value: \(argument)")
         }
 
         if argValue == 6 || argValue == 7 || argValue == 10 {
@@ -1102,18 +250,18 @@ for argument in args {
                 fallthrough
             case "--help":
                 showHelp()
-                dss.cancel()
+                Stdio.disableCtrlHandler()
                 exit(EXIT_SUCCESS)
             case "--version":
-                showVersion()
-                dss.cancel()
+                showHeader()
+                Stdio.disableCtrlHandler()
                 exit(EXIT_SUCCESS)
             default:
                 // FROM 7.0.0
                 // Check for a command -- other items can be saved as possible files
                 let range: NSRange = cmdRegExp.rangeOfFirstMatch(in: argument, options: [], range: NSMakeRange(0, argument.count))
                 if range.location != NSNotFound {
-                    reportErrorAndExit("Unknown argument: \(argument)")
+                    Stdio.reportErrorAndExit("Unknown argument: \(argument)")
                 }
 
                 // Assume the value is a source file for now -- we'll check them later
@@ -1127,13 +275,13 @@ for argument in args {
 
     // Trap commands that come last and therefore have missing args
     if argCount == CommandLine.arguments.count && argValue > 0 {
-        reportErrorAndExit("Missing value for \(argument)")
+        Stdio.reportErrorAndExit("Missing value for \(argument)")
     }
 }
 
 // Has anything been done?
 if actions.count == 0 && !doReformat && !doChangeResolution && !justInfo {
-    reportErrorAndExit("No actions specified")
+    Stdio.reportErrorAndExit("No actions specified")
 }
 
 /*
@@ -1151,13 +299,13 @@ if sourceFiles.count > 0 {
             break
         }
 
-        let file: String = getFullPath(sourceFiles[index])
+        let file: String = Path.getFullPath(sourceFiles[index])
         sourceFiles[index] = file
 
         // Check the referenced file exists. If it doesn't, remove it from the list
         // and then restart the loop to get the next item if there is one
         if !fm.fileExists(atPath: file, isDirectory: &sourceIsdirectory) {
-            reportWarning("Source \(file) cannot be found")
+            Stdio.reportWarning("Source \(file) cannot be found")
             sourceFiles.remove(at: index)
             continue
         }
@@ -1165,7 +313,7 @@ if sourceFiles.count > 0 {
         // Check the referenced file isn't a directory. If it is, remove it from the list
         // and then restart the loop to get the next item if there is one
         if sourceIsdirectory.boolValue {
-            reportWarning("Source \(file) is a directory -- use the -s flag to add a directory as a source")
+            Stdio.reportWarning("Source \(file) is a directory -- use the -s flag to add a directory as a source")
             sourceFiles.remove(at: index)
             continue
         }
@@ -1179,12 +327,12 @@ if sourceFiles.count > 0 {
 } else {
     // Get the full source path
     // NOTE It may point to a single file
-    sourcePath = getFullPath(sourcePath)
+    sourcePath = Path.getFullPath(sourcePath)
 
     // Check whether the source is a directory or a file,
     // and if neither exists, bail
     if !fm.fileExists(atPath: sourcePath, isDirectory: &sourceIsdirectory) {
-        reportErrorAndExit("Source \(sourcePath) cannot be found")
+        Stdio.reportErrorAndExit("Source \(sourcePath) cannot be found")
     }
 
     // If the source points to a file, add it to the list of passed files
@@ -1203,7 +351,7 @@ if sourceFiles.count > 0 {
 // Get full destination path
 // NOTE It may point to a single file, but this is only
 //      valid if `sourceFiles` contains a single file
-destPath = getFullPath(destPath)
+destPath = Path.getFullPath(destPath)
 
 // Check whether the destination is a directory or a file
 if !fm.fileExists(atPath: destPath, isDirectory: &destIsdirectory) {
@@ -1211,7 +359,7 @@ if !fm.fileExists(atPath: destPath, isDirectory: &destIsdirectory) {
     // or an as-yet-uncreated directory, so check its extension before bailing
     if (destPath as NSString).pathExtension.count == 0 {
         // No file extension, ergo this is a directory
-        processDirectory(destPath)
+        Imageprep.processDirectory(destPath)
 
         // If we've got this far, we have made the directory, so we need to
         // correctly set the directory check flag
@@ -1228,7 +376,7 @@ if !destIsdirectory.boolValue {
     // If the file doesn't exist, create directories that lead to
     // where it's going to be placed
     if !fm.fileExists(atPath: destPath) {
-        processDirectory(destPath)
+        Imageprep.processDirectory(destPath)
     }
 }
 
@@ -1236,13 +384,13 @@ if !destIsdirectory.boolValue {
 // we can't resolve, so warn and bail
 if !destIsdirectory.boolValue {
     if sourceIsdirectory.boolValue {
-        reportErrorAndExit("Source (dirctory) and destination (file) are mismatched")
+        Stdio.reportErrorAndExit("Source (dirctory) and destination (file) are mismatched")
     }
 
     // FROM 7.0.0
     // We can only accept a destination file if there's only one file on the list
     if sourceFiles.count > 1 {
-        reportErrorAndExit("Source files require a directory destination")
+        Stdio.reportErrorAndExit("Source files require a directory destination")
     }
 }
 
@@ -1290,16 +438,16 @@ if sourceFiles.count > 1 {
 // Output the source and destination directories
 if doShowMessages {
     if sourceIsdirectory.boolValue {
-        writeToStderr("Source: \(sourcePath)/" + (sourceFile.count > 0 ? "\(sourceFile)" : ""))
+        Stdio.report("Source: \(sourcePath)/" + (sourceFile.count > 0 ? "\(sourceFile)" : ""))
     } else {
-        writeToStderr("Sources: \(sourceFiles.count) \(sourceFiles.count == 1 ? "file" : "files")")
+        Stdio.report("Sources: \(sourceFiles.count) \(sourceFiles.count == 1 ? "file" : "files")")
     }
 
-    writeToStderr("Target: \(destPath)/" + (destFile.count > 0 ? "\(destFile)" : ""))
-    if doChangeResolution { writeToStderr("New DPI: \(dpi)") }
-    if doReformat { writeToStderr("New image format: \(newFormatForSips)") }
-    if doDeleteSource { writeToStderr("Will delete source image(s)") }
-    writeToStderr("Compression for JPEGs: \(jpegCompression)")
+    Stdio.report("Target: \(destPath)/" + (destFile.count > 0 ? "\(destFile)" : ""))
+    if doChangeResolution { Stdio.report("New DPI: \(dpi)") }
+    if doReformat { Stdio.report("New image format: \(newFormatForSips)") }
+    if doDeleteSource { Stdio.report("Will delete source image(s)") }
+    Stdio.report("Compression for JPEGs: \(jpegCompression)")
 }
 
 /*
@@ -1315,18 +463,18 @@ if sourceIsdirectory.boolValue {
 
         // If there are no contents, bail
         if contents.count == 0 {
-            reportWarning("Source directory \(sourcePath) is empty")
-            dss.cancel()
+            Stdio.reportWarning("Source directory \(sourcePath) is empty")
+            Stdio.disableCtrlHandler()
             exit(EXIT_SUCCESS)
         }
 
         // Otherwise proceess each item - 'processFile()' determines suitability
         for file: String in contents.sorted() {
             // FROM 7.0.0 `processFile()` expects a full path
-            processFile(sourcePath + "/" + file)
+            Imageprep.processFile(sourcePath + "/" + file)
         }
     } catch {
-        reportErrorAndExit("Unable to get contents of source directory \(sourcePath)")
+        Stdio.reportErrorAndExit("Unable to get contents of source directory \(sourcePath)")
     }
 } else {
     // FROM 7.0.0
@@ -1334,7 +482,7 @@ if sourceIsdirectory.boolValue {
     if sourceFiles.count > 0 {
         for file: String in sourceFiles {
             // FROM 7.0.0 `processFile()` expects a full path
-            processFile(file)
+            Imageprep.processFile(file)
         }
     }
 }
@@ -1346,11 +494,11 @@ if sourceIsdirectory.boolValue {
 // Present a final task report, if requested
 if doShowMessages {
     if fileCount == 1 {
-        writeToStderr("1 file converted")
+        Stdio.report("1 file converted")
     } else if fileCount > 1 {
-        writeToStderr("\(fileCount) files converted")
+        Stdio.report("\(fileCount) files converted")
     } else {
-        writeToStderr("No files converted")
+        Stdio.report("No files converted")
     }
 }
 
@@ -1360,5 +508,83 @@ if actions.count > 0 {
 }
 
 // And done...
-dss.cancel()
+Stdio.disableCtrlHandler()
 exit(EXIT_SUCCESS)
+
+
+// MARK: Help and Info Functions
+
+/**
+ Display the app's help information
+ */
+func showHelp() {
+
+    // Display the version info
+    showHeader()
+
+    // Get the list of suported formats, ignoring similarly named ones
+    var formats: String = ""
+    for i: Int in 0..<DEDUPE_INDEX {
+        formats += (SUPPORTED_TYPES[i].uppercased() + (i < DEDUPE_INDEX - 1 ? ", " : ""))
+    }
+
+    Stdio.report("\nA macOS image preparation utility.\r\n")
+    Stdio.report("\(String(.bold))USAGE\(String(.normal))\n    imageprep [-s path] [-d path] [-c pad_colour]")
+    Stdio.report("              [-a s scale_height scale_width] [-a p pad_height pad_width]")
+    Stdio.report("              [-a c crop_height crop_width] [--cropfrom point] [-r] [-f] [-x]")
+    Stdio.report("              [-o] [-h] [--info] [--createdirs] [--version]\n")
+    Stdio.report("    Image formats supported: \(formats).\n")
+    Stdio.report("\(String(.bold))OPTIONS\(String(.normal))")
+    Stdio.report("    -s | --source      {path}                  The path to an image or a directory of images.")
+    Stdio.report("                                               Default: current working directory.")
+    Stdio.report("    -d | --destination {path}                  The path to the images. Default: source directory.")
+    Stdio.report("    -a | --action      {type} {width} {height} The crop/pad dimensions. Type is s (scale), c (crop) or p (pad).")
+    Stdio.report("                                               Provide absolute integer values for width or height, or")
+    Stdio.report("                                               x to use the image's existing dimension, or m to maintain")
+    Stdio.report("                                               the source image's aspect ratio")
+    Stdio.report("    -c | --colour      {colour}                The padding colour in Hex, eg. A1B2C3. Default: FFFFFF.")
+    Stdio.report("         --cropfrom    {point}                 Anchor point for crop actions. Use tr for top right, cl for")
+    Stdio.report("                                               centre left, br for bottom right, etc.")
+    Stdio.report("         --offset      {x} {y}                 Specify a top-left co-ordinate for the crop origin.")
+    Stdio.report("                                               This setting will be overridden by --cropfrom")
+    Stdio.report("    -r | --resolution  {dpi}                   Set the image dpi, eg. 300.")
+    Stdio.report("    -f | --format      {format}                Set the image format (see above).")
+    Stdio.report("    -j | --jpeg        {level}                 Set the compression level of any saved JPEG images as a percentage.")
+    Stdio.report("                                               Default: 80")
+    Stdio.report("    -o | --overwrite                           Overwrite an existing file. Without this, existing files will be kept.")
+    Stdio.report("    -x                                         Delete the source file. Without this, the source will be retained.")
+    Stdio.report("         --createdirs                          Make target intermediate directories if they do not exist.")
+    Stdio.report("         --info                                Export basic image info: path, height, width, dpi and alpha.")
+    Stdio.report("    -q | --quiet                               Silence output messages (errors excepted).")
+    Stdio.report("    -h | --help                                This help screen.")
+    Stdio.report("         --version                             Version information.\n")
+    Stdio.report("\(String(.bold))EXAMPLES\(String(.normal))")
+    Stdio.report("    Convert files in the current directory to JPEG and to 300dpi:\n")
+    Stdio.report("        imageprep -f jpeg -r 300\n")
+    Stdio.report("    Scale to 128 x 128, keeping the originals:\n")
+    Stdio.report("        imageprep -s $SOURCE -d $DEST -a s 128 128\n")
+    Stdio.report("    Scale to height of 1024, width in aspect, keeping the originals:\n")
+    Stdio.report("        imageprep -s $SOURCE -d $DEST -a s m 1024\n")
+    Stdio.report("    Crop files to 1000 x 100, making intermediate directories, keeping originals:\n")
+    Stdio.report("        imageprep -s $SOURCE -d $DEST --createdirs -a c 1000 1000\n")
+    Stdio.report("    Crop files to 1000 x source image height, keeping originals:\n")
+    Stdio.report("        imageprep -s $SOURCE -d $DEST -a c 1000 x\n")
+    Stdio.report("    Crop files to 500 x 500, anchored at top right, deleting the originals:\n")
+    Stdio.report("        imageprep -s $SOURCE -d $DEST -a c 500 500 --cropfrom tr -x\n")
+    Stdio.report("    Pad to 2000 x 2000 with magenta, deleting the originals:\n")
+    Stdio.report("        imageprep -s $SOURCE -d $DEST -a p 2000 2000 -c ff00ff -x\n")
+    Stdio.report("\(String(.italic))https://smittytone.net/imageprep/index.html\n\(String(.normal))")
+}
+
+
+/**
+ Display the app's version number.
+ */
+func showHeader() {
+
+    let version: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String
+    let build: String   = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as! String
+    let name: String    = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as! String
+    Stdio.report("\(name) \(version) (\(build))")
+    Stdio.report("Copyright © 2023, Tony Smith (@smittytone). Source code available under the MIT licence.")
+}
