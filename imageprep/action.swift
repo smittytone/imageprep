@@ -40,14 +40,14 @@ import Foundation
  */
 final class Action {
 
-    // MARK: - Properties
+    // MARK: Properties
     var type: String = ""
     var width: Int = -1
     var height: Int = -1
     var colour: String = "FFFFFF"
 
 
-    // MARK: - Lifecycle Functions
+    // MARK: Lifecycle Functions
     init(_ type: String = "",
          _ width: Int = -1,
          _ height: Int = -1,
