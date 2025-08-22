@@ -25,6 +25,7 @@
 */
 
 import Foundation
+import Clicore
 
 
 struct Imageprep {
