@@ -26,6 +26,7 @@
 
 import Foundation
 import Cocoa
+import Clicore
 
 
 // MARK: Constants
@@ -99,7 +100,7 @@ Stdio.enableCtrlHandler("impageprep interrupted -- cancelling")
 
 // FROM 6.1.0
 // No arguments? Show Help
-var args: [String] = CommandLine.arguments
+var args: [String] = Cli.unify(args: CommandLine.arguments)
 if args.count == 1 {
     showHelp()
     Stdio.disableCtrlHandler()
@@ -188,37 +189,21 @@ for argument in args {
     } else {
         // Parse the next non-value argument
         switch argument.lowercased() {
-            case "-s":
-                fallthrough
-            case "--source":
+            case "-s", "--source":
                 argValue = 1
-            case "-d":
-                fallthrough
-            case "--destination":
+            case "-d", "--destination":
                 argValue = 2
-            case "-c":
-                fallthrough
-            case "--color":
-                fallthrough
-            case "--colour":
+            case "-c", "--color", "--colour":
                 argValue = 3
-            case "-r":
-                fallthrough
-            case "--resolution":
+            case "-r", "--resolution":
                 argValue = 4
                 doChangeResolution = true
-            case "-f":
-                fallthrough
-            case "--format":
+            case "-f", "--format":
                 argValue = 5
                 doReformat = true
-            case "-a":
-                fallthrough
-            case "--action":
+            case "-a", "--action":
                 argValue = 6
-            case "-q":
-                fallthrough
-            case "--quiet":
+            case "-q", "--quiet":
                 doShowMessages = false
             /*
             case "-k":
@@ -229,9 +214,7 @@ for argument in args {
             case "-x":
                 // FROM 7.0.0
                 doDeleteSource = true
-            case "-o":
-                fallthrough
-            case "--overwrite":
+            case "-o", "--overwrite":
                 doOverwrite = true
             case "--createdirs":
                 doMakeSubDirectories = true
@@ -242,13 +225,9 @@ for argument in args {
             case "--offset":
                 argValue = 10
             // FROM 7.0.0
-            case "--jpeg":
-                fallthrough
-            case "-j":
+            case "-j", "--jpeg":
                 argValue = 12
-            case "-h":
-                fallthrough
-            case "--help":
+            case "-h", "--help":
                 showHelp()
                 Stdio.disableCtrlHandler()
                 exit(EXIT_SUCCESS)
@@ -519,14 +498,19 @@ exit(EXIT_SUCCESS)
  */
 func showHelp() {
 
-    // Display the version info
-    showHeader()
-
     // Get the list of suported formats, ignoring similarly named ones
     var formats: String = ""
-    for i: Int in 0..<DEDUPE_INDEX {
-        formats += (SUPPORTED_TYPES[i].uppercased() + (i < DEDUPE_INDEX - 1 ? ", " : ""))
+    for i in 0..<DEDUPE_INDEX {
+        formats += SUPPORTED_TYPES[i].uppercased()
+        if i < DEDUPE_INDEX - 2 {
+            formats += ", "
+        } else if i == DEDUPE_INDEX - 2 {
+            formats += " and "
+        }
     }
+
+    // Display the version info
+    showHeader()
 
     Stdio.report("\nA macOS image preparation utility.\r\n")
     Stdio.report("\(String(.bold))USAGE\(String(.normal))\n    imageprep [-s path] [-d path] [-c pad_colour]")
@@ -574,6 +558,7 @@ func showHelp() {
     Stdio.report("    Pad to 2000 x 2000 with magenta, deleting the originals:\n")
     Stdio.report("        imageprep -s $SOURCE -d $DEST -a p 2000 2000 -c ff00ff -x\n")
     Stdio.report("\(String(.italic))https://smittytone.net/imageprep/index.html\(String(.normal))")
+    return
 }
 
 
