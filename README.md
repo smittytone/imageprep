@@ -1,6 +1,6 @@
 # imageprep 7.1.0 #
 
-*imageprep* is an image preparation utility for macOS. It is essentially a wrapper for *sips*.
+*imageprep* is an image preparation utility for macOS. It is essentially a wrapper for *sips*. It has been tested with *sips* 316 as used in macOS 15.6.1.
 
 ## Breaking Change
 
