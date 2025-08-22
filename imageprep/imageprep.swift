@@ -289,6 +289,12 @@ struct Imageprep {
      */
     static func runSips(_ args: [String]) {
 
+        let (code, text) = runProcess(app: "/usr/bin/sips", with: args)
+        if code != 0 {
+            Stdio.reportError("sips reported an error: \(text)")
+        }
+
+        /*
         let task: Process = Process()
         task.executableURL = URL.init(fileURLWithPath: "/usr/bin/sips")
         if args.count > 0 { task.arguments = args }
@@ -324,6 +330,7 @@ struct Imageprep {
                 }
             }
         }
+         */
     }
 
 
