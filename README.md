@@ -78,7 +78,7 @@ Contributions are welcome, but pull requests can only be accepted when they targ
 
 ## Release Notes ##
 
-See [CHANGELOG.md](./CHANNGELOG.md)
+See [CHANGELOG.md](./CHANGELOG.md).
 
 **Note** *imageprep* was initially released as version 6.0.0 for historical reasons: previous versions were released in the form of shell scripts.
 
