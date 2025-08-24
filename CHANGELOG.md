@@ -1,6 +1,6 @@
 ## Release Notes ##
 
-- 7.1.0 *Unreleased*
+- 7.1.0 *24 August 2025*
     - Re-base the code upon my standard CLI components.
 - 7.0.0 *10 August 2023*
     - Support the loading of individual files, not just a directory.
