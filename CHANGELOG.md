@@ -2,6 +2,7 @@
 
 - 7.1.0 *24 August 2025*
     - Re-base the code upon my standard CLI components.
+    - Update and extend tests.
 - 7.0.0 *10 August 2023*
     - Support the loading of individual files, not just a directory.
     - Deleting source files after processing is no longer the default -- see [Breaking Change](#breaking-change), above.
