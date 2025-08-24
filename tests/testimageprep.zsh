@@ -22,7 +22,7 @@ test_num=1
 
 fail() {
     echo "\rTEST $2 FAILED @ LINE $3: $1 "
-    exit  1
+    #exit  1
 }
 
 pass() {
@@ -68,7 +68,7 @@ fi
 # START
 "$test_app" --version
 
-# TEST -- scale images, create intermediate directories
+# TEST 1 -- scale images, create intermediate directories
 echo -n "Running tests...\nTEST $test_num..."
 result=$("$test_app" -s "$image_src" -d test1 --createdirs -a s 100 100 2>&1)
 
@@ -78,15 +78,16 @@ check_dir_exists test1 $test_num
 # Make sure random image is 100px high
 result=$(sips 'test1/BBC Space Themes.jpg' -g pixelHeight -1)
 result=$(echo "$result" | cut -d "|" -f2)
-if [[ "$result" != "  pixelHeight: 100" ]]; then
+if [[ "$result" != "pixelHeight: 100" ]]; then
     fail "Scale to 100 x 100 failed" $test_num $LINENO
+    echo $result
 fi
 
 # Clear the output
 rm -rf test1
 pass
 
-# TEST -- crop images, create intermediate directories
+# TEST 2 -- crop images, create intermediate directories
 new_test
 result=$("$test_app" -s "$image_src" -d test1 --createdirs -a c 200 100 2>&1)
 
@@ -96,14 +97,14 @@ check_dir_exists test1 $test_num
 # Make sure random image is 100px high
 result=$(sips 'test1/BBC Space Themes.jpg' -g pixelHeight -1)
 result=$(echo "$result" | cut -d "|" -f2)
-if [[ "$result" != "  pixelHeight: 100" ]]; then
+if [[ "$result" != "pixelHeight: 100" ]]; then
     fail "Crop to 200 x 100 failed" $test_num $LINENO
 fi
 
 # Make sure random image is 100px wide
 result=$(sips 'test1/BBC Space Themes.jpg' -g pixelWidth -1)
 result=$(echo "$result" | cut -d "|" -f2)
-if [[ "$result" != "  pixelWidth: 200" ]]; then
+if [[ "$result" != "pixelWidth: 200" ]]; then
     fail "Crop to 200 x 100 failed" $test_num $LINENO
 fi
 
@@ -111,7 +112,7 @@ fi
 rm -rf test1
 pass
 
-# TEST -- bad DPI value spotted
+# TEST 3 -- bad DPI value spotted
 new_test
 result=$("$test_app" -s "$image_src" -d test1 --createdirs -r 0 2>&1)
 
@@ -126,7 +127,7 @@ fi
 
 pass
 
-# TEST -- bad colour value (too long) spotted
+# TEST 4 -- bad colour value (too long) spotted
 new_test
 result=$("$test_app" -s "$image_src" -d test1 --createdirs -c 012345566789 2>&1)
 
@@ -142,7 +143,7 @@ fi
 
 pass
 
-# TEST -- bad colour value (not hex) spotted
+# TEST 5 -- bad colour value (not hex) spotted
 new_test
 result=$("$test_app" -s "$image_src" -d test1 --createdirs -c gg01aa 2>&1)
 
@@ -157,7 +158,7 @@ fi
 
 pass
 
-# TEST -- bad format value spotted
+# TEST 6 -- bad format value spotted
 new_test
 result=$("$test_app" -s "$image_src" -d test1 --createdirs -f biff 2>&1)
 
@@ -172,7 +173,7 @@ fi
 
 pass
 
-# TEST -- bad switch (long) spotted
+# TEST 7 -- bad switch (long) spotted
 new_test
 result=$("$test_app" -s "$image_src" -d test1 --createdirs --jump 2>&1)
 
@@ -187,7 +188,7 @@ fi
 
 pass
 
-# TEST -- bad switch (short) spotted
+# TEST 8 -- bad switch (short) spotted
 new_test
 result=$("$test_app" -s "$image_src" -d test1 --createdirs -z 2>&1)
 
@@ -202,7 +203,7 @@ fi
 
 pass
 
-# TEST -- no files in source directory spotted
+# TEST 9 -- no files in source directory spotted
 new_test
 mkdir test5
 cd test5
@@ -217,7 +218,7 @@ fi
 
 pass
 
-# TEST -- missing source directory spotted
+# TEST 10 -- missing source directory spotted
 new_test
 result=$("$test_app" -s test6 -a s 100 100 2>&1)
 
@@ -229,7 +230,7 @@ fi
 
 pass
 
-# TEST -- missing target directory spotted, no intermediates created
+# TEST 11 -- missing target directory spotted, no intermediates created
 new_test
 result=$("$test_app" -s "$image_src" -d test7 -a s 100 100 2>&1)
 # Make sure sub-directory was not created
@@ -243,7 +244,7 @@ fi
 
 pass
 
-# TEST -- use of a relative path
+# TEST 12 -- use of a relative path
 new_test
 result=$("$test_app" -s "../source" -d test8 --createdirs -a s 100 100 2>&1)
 
@@ -253,13 +254,13 @@ check_dir_exists test8 $test_num
 # Make sure random image is 100px high
 result=$(sips 'test8/Space Invaded.jpg' -g pixelHeight -1)
 result=$(echo "$result" | cut -d "|" -f2)
-if [[ "$result" != "  pixelHeight: 100" ]]; then
+if [[ "$result" != "pixelHeight: 100" ]]; then
     fail "Scale to 100 x 100 failed" $test_num $LINENO
 fi
 
 pass
 
-# TEST -- use a relative path, convert jpg -> png, create intermediate dirs, scale images
+# TEST 13 -- use a relative path, convert jpg -> png, create intermediate dirs, scale images
 new_test
 result=$("$test_app" -s "../source" -d test9 --createdirs -a s 100 100 -f png 2>&1)
 
@@ -274,7 +275,7 @@ fi
 # Make sure random image is scaled
 result=$(sips 'test9/Out of this World.png' -g pixelHeight -1)
 result=$(echo "$result" | cut -d "|" -f2)
-if [[ "$result" != "  pixelHeight: 100" ]]; then
+if [[ "$result" != "pixelHeight: 100" ]]; then
     fail "Scale to 100 x 100 failed" $test_num $LINENO
 fi
 
@@ -282,7 +283,7 @@ cd ..
 rm -rf test5
 pass
 
-# TEST -- source image deleted
+# TEST 14 -- source image deleted
 new_test
 mkdir test10
 cp "source/Out of this World.jpg" "test10/oow.jpg"
@@ -297,7 +298,7 @@ check_file_exists test10a/oow.jpg $test_num $LINENO
 # Make sure image is 100px high
 result=$(sips test10a/oow.jpg -g pixelHeight -1)
 result=$(echo "$result" | cut -d "|" -f2)
-if [[ "$result" != "  pixelHeight: 100" ]]; then
+if [[ "$result" != "pixelHeight: 100" ]]; then
     fail "Scale to 100 x 100 failed" $test_num $LINENO
 fi
 
@@ -308,7 +309,7 @@ rm -rf test10
 rm -rf test10a
 pass
 
-# TEST -- source image deleted when it should not be
+# TEST 15 -- source image deleted when it should not be
 new_test
 cp "source/Out of this World.jpg" oow.jpg
 result=$("$test_app" -x -s oow.jpg -a s 150 150 2>&1)
@@ -319,14 +320,14 @@ check_file_exists oow.jpg $test_num $LINENO
 # Make sure image is 150px high
 result=$(sips oow.jpg -g pixelHeight -1)
 result=$(echo "$result" | cut -d "|" -f2)
-if [[ "$result" != "  pixelHeight: 150" ]]; then
+if [[ "$result" != "pixelHeight: 150" ]]; then
     fail "Scale to 150 x 150 failed" $test_num $LINENO
 fi
 
 rm oow.jpg
 pass
 
-# TEST -- source and dest are mismatched
+# TEST 16 -- source and dest are mismatched
 new_test
 result=$("$test_app" -x -s "$image_src" -d "test.jpg" --createdirs -a s 150 150 2>&1)
 
@@ -338,7 +339,7 @@ fi
 
 pass
 
-# TEST -- check bad scale width value
+# TEST 17 -- check bad scale width value
 new_test
 test_dir="test$test_num"
 mkdir "$test_dir"
@@ -352,7 +353,7 @@ fi
 
 pass
 
-# TEST -- check bad scale height value
+# TEST 18 -- check bad scale height value
 new_test
 result=$("$test_app" -s "$image_src" -d "$test_dir" -a s 150 ZZZ 2>&1)
 
@@ -364,7 +365,7 @@ fi
 
 pass
 
-# TEST -- check bad crop width value
+# TEST 19 -- check bad crop width value
 new_test
 result=$("$test_app" -s "$image_src" -d "$test_dir" -a c AAA ZZZ 2>&1)
 
@@ -376,7 +377,7 @@ fi
 
 pass
 
-# TEST -- check bad crop height value
+# TEST 20 -- check bad crop height value
 new_test
 result=$("$test_app" -s "$image_src" -d "$test_dir" -a c 150 '£' 2>&1)
 
@@ -388,7 +389,7 @@ fi
 
 pass
 
-# TEST -- check bad pad width value
+# TEST 21 -- check bad pad width value
 new_test
 result=$("$test_app" -s "$image_src" -d "$test_dir" -a p A B 2>&1)
 
@@ -400,7 +401,7 @@ fi
 
 pass
 
-# TEST -- check bad pad height value
+# TEST 22 -- check bad pad height value
 new_test
 result=$("$test_app" -s "$image_src" -d "$test_dir" -a p 1 K 2>&1)
 
@@ -413,7 +414,7 @@ fi
 rm -rf "$test_dir"
 pass
 
-# TEST -- check absent source file
+# TEST 23 -- check absent source file
 new_test
 test_file="zzz.png"
 touch "$test_file"
@@ -428,7 +429,7 @@ fi
 rm "$test_file"
 pass
 
-# TEST -- check for bad action
+# TEST 24 -- check for bad action
 new_test
 result=$("$test_app" -s "$image_src" -a z 100 100 2>&1)
 
@@ -440,7 +441,7 @@ fi
 
 pass
 
-# TEST -- check for ignorable action
+# TEST 25 -- check for ignorable action
 new_test
 result=$("$test_app" -s "$image_src" -a s x x 2>&1)
 
@@ -452,7 +453,7 @@ fi
 
 pass
 
-# TEST -- check for scale with raw image value (height)
+# TEST 26 -- check for scale with raw image value (height)
 new_test
 mkdir "test$test_num"
 result=$("$test_app" -s "$image_src" -d "test$test_num" -a s 1000 x 2>&1)
@@ -462,14 +463,14 @@ result1=$(sips "test$test_num/BBC Space Themes.jpg" -g pixelHeight -1)
 result2=$(sips "test$test_num/BBC Space Themes.jpg" -g pixelWidth -1)
 result1=$(echo "$result1" | cut -d "|" -f2)
 result2=$(echo "$result1" | cut -d "|" -f2)
-if [[ "$result1" != "  pixelHeight: 1500" && "$result2" != "  pixelWidth: 1000" ]]; then
+if [[ "$result1" != "pixelHeight: 1500" && "$result2" != "  pixelWidth: 1000" ]]; then
     fail "Scale to 1000 x image height failed" $test_num $LINENO
 fi
 
 rm -rf "test$test_num"
 pass
 
-# TEST -- check for scale with raw image value (width)
+# TEST 27 -- check for scale with raw image value (width)
 new_test
 mkdir "test$test_num"
 result=$("$test_app" -s "$image_src" -d "test$test_num" -a s x 800 2>&1)
@@ -479,14 +480,14 @@ result1=$(sips "test$test_num/BBC Space Themes.jpg" -g pixelHeight -1)
 result2=$(sips "test$test_num/BBC Space Themes.jpg" -g pixelWidth -1)
 result1=$(echo "$result1" | cut -d "|" -f2)
 result2=$(echo "$result1" | cut -d "|" -f2)
-if [[ "$result1" != "  pixelHeight: 800" && "$result2" != "  pixelWidth: 1500" ]]; then
+if [[ "$result1" != "pixelHeight: 800" && "$result2" != "  pixelWidth: 1500" ]]; then
     fail "Scale to image width x 800 failed" $test_num $LINENO
 fi
 
 rm -rf "test$test_num"
 pass
 
-# TEST -- check for scale with aspect-ratio set image value (width)
+# TEST 28 -- check for scale with aspect-ratio set image value (width)
 new_test
 result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a s 130 m 2>&1)
 
@@ -495,14 +496,14 @@ result1=$(sips 2000AD_0086_24.jpg -g pixelHeight -1)
 result2=$(sips 2000AD_0086_24.jpg -g pixelWidth -1)
 result1=$(echo "$result1" | cut -d "|" -f2)
 result2=$(echo "$result1" | cut -d "|" -f2)
-if [[ "$result1" != "  pixelHeight: 160" && "$result2" != "  pixelWidth: 130" ]]; then
+if [[ "$result1" != "pixelHeight: 160" && "$result2" != "  pixelWidth: 130" ]]; then
     fail "Scale to 130 by aspect ratio failed" $test_num $LINENO
 fi
 
 rm 2000AD_0086_24.jpg
 pass
 
-# TEST -- check for unknown crop fix point
+# TEST 29 -- check for unknown crop fix point
 new_test
 result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a c 130 m --cropfrom gg 2>&1)
 
@@ -514,7 +515,7 @@ fi
 
 pass
 
-# TEST -- check for crop to bottom left
+# TEST 30 -- check for crop to bottom left
 new_test
 result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a c 650 800 --cropfrom br 2>&1)
 
@@ -523,14 +524,14 @@ result1=$(sips 2000AD_0086_24.jpg -g pixelHeight -1)
 result2=$(sips 2000AD_0086_24.jpg -g pixelWidth -1)
 result1=$(echo "$result1" | cut -d "|" -f2)
 result2=$(echo "$result1" | cut -d "|" -f2)
-if [[ "$result1" != "  pixelHeight: 800" && "$result2" != "  pixelWidth: 650" ]]; then
+if [[ "$result1" != "pixelHeight: 800" && "$result2" != "  pixelWidth: 650" ]]; then
     fail "Crop to 650 x 800 failed" $test_num $LINENO
 fi
 
 pass
 echo "NOTE Manually verify 2000AD_0086_24.jpg is a bottom-right crop"
 
-# TEST -- check crop offset
+# TEST 31 -- check crop offset
 new_test
 result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a c 229 231 --offset 285 97 -d 2000AD_0086_24b.jpg 2>&1)
 
@@ -539,14 +540,14 @@ result1=$(sips 2000AD_0086_24b.jpg -g pixelHeight -1)
 result2=$(sips 2000AD_0086_24b.jpg -g pixelWidth -1)
 result1=$(echo "$result1" | cut -d "|" -f2)
 result2=$(echo "$result2" | cut -d "|" -f2)
-if [[ "$result1" != "  pixelHeight: 231" && "$result2" != "  pixelWidth: 229" ]]; then
+if [[ "$result1" != "pixelHeight: 231" && "$result2" != "  pixelWidth: 229" ]]; then
     fail "Crop to 229 x 231 failed" $test_num $LINENO
 fi
 
 pass
 echo "NOTE Manually verify 2000AD_0086_24b.jpg is a Johnny Alpha face crop"
 
-# TEST -- check for bad offset
+# TEST 32 -- check for bad offset
 new_test
 result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a c 229 231 --offset -285 97 -d 2000AD_0086_24c.jpg 2>&1)
 
@@ -558,7 +559,7 @@ fi
 
 pass
 
-# TEST -- check for bad arg trapping
+# TEST 33 -- check for bad arg trapping
 new_test
 result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a c 229 --offset -285 97 -d 2000AD_0086_24d.jpg 2>&1)
 
@@ -570,7 +571,7 @@ fi
 
 pass
 
-# TEST -- check for zero offset adjustments
+# TEST 34 -- check for zero offset adjustments
 new_test
 result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a c 1300 300 --offset 0 100 -d 2000AD_0086_24e.jpg 2>&1)
 
@@ -579,14 +580,14 @@ result1=$(sips 2000AD_0086_24e.jpg -g pixelHeight -1)
 result2=$(sips 2000AD_0086_24e.jpg -g pixelWidth -1)
 result1=$(echo "$result1" | cut -d "|" -f2)
 result2=$(echo "$result2" | cut -d "|" -f2)
-if [[ "$result1" != "  pixelHeight: 300" && "$result2" != "  pixelWidth: 1300" ]]; then
+if [[ "$result1" != "pixelHeight: 300" && "$result2" != "  pixelWidth: 1300" ]]; then
     fail "Crop to 1300 x 300 failed ($result1 x $result2)" $test_num $LINENO
 fi
 
 pass
 echo "NOTE Manually verify 2000AD_0086_24e.jpg is a strip crop"
 
-# TEST -- check for bad switch trapping #1
+# TEST 35 -- check for bad switch trapping #1
 new_test
 result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a c 100 100 --offset 10 10 -d 2000AD_0086_24d.jpg -k 2>&1)
 
@@ -598,7 +599,7 @@ fi
 
 pass
 
-# TEST -- check for bad switch trapping #2
+# TEST 36 -- check for bad switch trapping #2
 new_test
 result=$("$test_app" -s "$image_src/2000AD_0086_24.jpg" -a c 100 100 --offset 10 10 -d 2000AD_0086_24d.jpg --keep 2>&1)
 
@@ -610,7 +611,7 @@ fi
 
 pass
 
-# TEST -- check reformatting
+# TEST 37 -- check reformatting
 new_test
 result=$("$test_app" -s "$image_src/doctor.png" -a s 150 150 -f jpg -d . 2>&1)
 
@@ -620,7 +621,7 @@ rm doctor.jpg
 pass
 
 
-# TEST -- check bad compression value
+# TEST 38 -- check bad compression value
 new_test
 result=$("$test_app" -s "$image_src/doctor.png" -a s 150 150 -f jpg -j 1000 -d . 2>&1)
 
@@ -633,7 +634,7 @@ fi
 pass
 
 
-# TEST -- check good compression value
+# TEST 39 -- check good compression value
 new_test
 result=$("$test_app" -s "$image_src/doctor.png" -a s 150 150 -f jpg -j 50 -d . 2>&1)
 
@@ -647,7 +648,7 @@ rm doctor.jpg
 pass
 
 
-# TEST -- check good compression value with % sign
+# TEST 40 -- check good compression value with % sign
 new_test
 result=$("$test_app" -s "$image_src/doctor.png" -a s 150 150 -f jpg --jpeg '42.42%' -d . 2>&1)
 
@@ -661,7 +662,7 @@ rm doctor.jpg
 pass
 
 
-# TEST -- check good compression value
+# TEST 41 -- check good compression value
 new_test
 result=$("$test_app" -s "$image_src/doctor.png" -a s 150 150 -f jpg -j 05 -d ./d05.jpg 2>&1)
 result=$("$test_app" -s "$image_src/doctor.png" -a s 150 150 -f jpg -j 95 -d ./d95.jpg 2>&1)

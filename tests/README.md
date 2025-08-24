@@ -2,6 +2,8 @@
 
 The script `testimageprep.zsh` performs a sequence of tests on an *imageprep* binary. It uses the image files in the `source` directory.
 
+It has been tested most recently with *sips* 316 (`sips --version`), but has been tested with previous *sips* releases.
+
 ### Usage ###
 
 1. `cd {path/to/imageprep/tests}`

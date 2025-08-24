@@ -3,13 +3,15 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 54;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
-		3B20081D2591F2D200446505 /* ImageInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B20081C2591F2D200446505 /* ImageInfo.swift */; };
+		3B20081D2591F2D200446505 /* imageInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B20081C2591F2D200446505 /* imageInfo.swift */; };
 		3B283B96256EACCF002B999D /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B283B95256EACCF002B999D /* main.swift */; };
-		3BF352A325756308009F8D72 /* Action.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BF352A225756308009F8D72 /* Action.swift */; };
+		3B38EA0B2E58892500BAD457 /* Clicore in Frameworks */ = {isa = PBXBuildFile; productRef = 3B38EA0A2E58892500BAD457 /* Clicore */; };
+		3B757FA62E54A47A00567756 /* imageprep.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B757FA52E54A47A00567756 /* imageprep.swift */; };
+		3BF352A325756308009F8D72 /* action.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BF352A225756308009F8D72 /* action.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -27,10 +29,13 @@
 /* Begin PBXFileReference section */
 		3B09E0EC2A7258CD003C3EF8 /* LICENSE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = LICENSE.md; sourceTree = "<group>"; };
 		3B09E0ED2A7258CD003C3EF8 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
-		3B20081C2591F2D200446505 /* ImageInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageInfo.swift; sourceTree = "<group>"; };
+		3B20081C2591F2D200446505 /* imageInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = imageInfo.swift; sourceTree = "<group>"; };
 		3B283B92256EACCF002B999D /* imageprep */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = imageprep; sourceTree = BUILT_PRODUCTS_DIR; };
 		3B283B95256EACCF002B999D /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		3B283B9D256EAD4E002B999D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		3B757F9C2E54A07300567756 /* CHANGELOG.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CHANGELOG.md; sourceTree = "<group>"; };
+		3B757F9D2E54A0C000567756 /* imageprep.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = imageprep.1; sourceTree = "<group>"; };
+		3B757FA52E54A47A00567756 /* imageprep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = imageprep.swift; sourceTree = "<group>"; };
 		3BD584592D13078F006388F1 /* 2000AD_0086_24.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = 2000AD_0086_24.jpg; sourceTree = "<group>"; };
 		3BD5845A2D13078F006388F1 /* BBC Space Themes.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "BBC Space Themes.jpg"; sourceTree = "<group>"; };
 		3BD5845B2D13078F006388F1 /* doctor.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = doctor.png; sourceTree = "<group>"; };
@@ -41,7 +46,7 @@
 		3BD584612D13078F006388F1 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		3BD584622D13078F006388F1 /* testimageprep.zsh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = testimageprep.zsh; sourceTree = "<group>"; };
 		3BD584642D13079D006388F1 /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
-		3BF352A225756308009F8D72 /* Action.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Action.swift; sourceTree = "<group>"; };
+		3BF352A225756308009F8D72 /* action.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = action.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -49,6 +54,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3B38EA0B2E58892500BAD457 /* Clicore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -60,6 +66,7 @@
 			children = (
 				3B09E0ED2A7258CD003C3EF8 /* README.md */,
 				3B09E0EC2A7258CD003C3EF8 /* LICENSE.md */,
+				3B757F9C2E54A07300567756 /* CHANGELOG.md */,
 				3BD584642D13079D006388F1 /* Package.swift */,
 			);
 			name = Misc;
@@ -71,6 +78,7 @@
 				3B283B94256EACCF002B999D /* imageprep */,
 				3BD584632D13078F006388F1 /* tests */,
 				3B09E0EE2A7258D6003C3EF8 /* Misc */,
+				3B757F9E2E54A0C000567756 /* manpage */,
 				3B283B93256EACCF002B999D /* Products */,
 			);
 			sourceTree = "<group>";
@@ -87,11 +95,20 @@
 			isa = PBXGroup;
 			children = (
 				3B283B95256EACCF002B999D /* main.swift */,
-				3BF352A225756308009F8D72 /* Action.swift */,
-				3B20081C2591F2D200446505 /* ImageInfo.swift */,
+				3B757FA52E54A47A00567756 /* imageprep.swift */,
+				3BF352A225756308009F8D72 /* action.swift */,
+				3B20081C2591F2D200446505 /* imageInfo.swift */,
 				3B283B9D256EAD4E002B999D /* Info.plist */,
 			);
 			path = imageprep;
+			sourceTree = "<group>";
+		};
+		3B757F9E2E54A0C000567756 /* manpage */ = {
+			isa = PBXGroup;
+			children = (
+				3B757F9D2E54A0C000567756 /* imageprep.1 */,
+			);
+			path = manpage;
 			sourceTree = "<group>";
 		};
 		3BD584602D13078F006388F1 /* source */ = {
@@ -146,7 +163,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastSwiftUpdateCheck = 1220;
-				LastUpgradeCheck = 1430;
+				LastUpgradeCheck = 1640;
 				TargetAttributes = {
 					3B283B91256EACCF002B999D = {
 						CreatedOnToolsVersion = 12.2;
@@ -154,7 +171,6 @@
 				};
 			};
 			buildConfigurationList = 3B283B8D256EACCF002B999D /* Build configuration list for PBXProject "imageprep" */;
-			compatibilityVersion = "Xcode 9.3";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -162,6 +178,10 @@
 				Base,
 			);
 			mainGroup = 3B283B89256EACCF002B999D;
+			packageReferences = (
+				3B38EA092E58892500BAD457 /* XCRemoteSwiftPackageReference "clicore" */,
+			);
+			preferredProjectObjectVersion = 77;
 			productRefGroup = 3B283B93256EACCF002B999D /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -177,8 +197,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				3B283B96256EACCF002B999D /* main.swift in Sources */,
-				3B20081D2591F2D200446505 /* ImageInfo.swift in Sources */,
-				3BF352A325756308009F8D72 /* Action.swift in Sources */,
+				3B20081D2591F2D200446505 /* imageInfo.swift in Sources */,
+				3BF352A325756308009F8D72 /* action.swift in Sources */,
+				3B757FA62E54A47A00567756 /* imageprep.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -221,8 +242,10 @@
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = Y5J3K52DNA;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -283,8 +306,10 @@
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = Y5J3K52DNA;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -307,17 +332,18 @@
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
+				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Manual;
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
-				CURRENT_PROJECT_VERSION = 134;
+				CURRENT_PROJECT_VERSION = 167;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = Y5J3K52DNA;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = Y5J3K52DNA;
 				DSTROOT = $SRCROOT/build/pkgroot;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = "$(SRCROOT)/imageprep/Info.plist";
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
-				MARKETING_VERSION = 7.0.0;
+				MACOSX_DEPLOYMENT_TARGET = 11.5;
+				MARKETING_VERSION = 7.1.0;
+				OTHER_CODE_SIGN_FLAGS = "--timestamp";
 				PRODUCT_BUNDLE_IDENTIFIER = com.bps.imageprep;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -331,17 +357,18 @@
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
+				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Manual;
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
-				CURRENT_PROJECT_VERSION = 134;
+				CURRENT_PROJECT_VERSION = 167;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = Y5J3K52DNA;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = Y5J3K52DNA;
 				DSTROOT = $SRCROOT/build/pkgroot;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = "$(SRCROOT)/imageprep/Info.plist";
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
-				MARKETING_VERSION = 7.0.0;
+				MACOSX_DEPLOYMENT_TARGET = 11.5;
+				MARKETING_VERSION = 7.1.0;
+				OTHER_CODE_SIGN_FLAGS = "--timestamp";
 				PRODUCT_BUNDLE_IDENTIFIER = com.bps.imageprep;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -371,6 +398,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		3B38EA092E58892500BAD457 /* XCRemoteSwiftPackageReference "clicore" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/smittytone/clicore";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		3B38EA0A2E58892500BAD457 /* Clicore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3B38EA092E58892500BAD457 /* XCRemoteSwiftPackageReference "clicore" */;
+			productName = Clicore;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 3B283B8A256EACCF002B999D /* Project object */;
 }
