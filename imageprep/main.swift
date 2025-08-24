@@ -495,6 +495,9 @@ exit(EXIT_SUCCESS)
 
 /**
  Display the app's help information
+
+ NOTE Xcode shows 'will never be executed' warning caused by the presence
+      of the `for` loop. Why? 
  */
 func showHelp() {
 
